@@ -1,26 +1,44 @@
 @import "tailwindcss";
 
+/* ============================================
+   PALETA ERP - CRM
+   ============================================ */
 :root {
+  /* Colores base */
+  --blanco: #ffffff;
+  --gris-claro: #d9d9d9;
+  --gris-oscuro: #353535;
+  --teal: #3c6e71;
+  --azul-oscuro: #284b63;
+
+  /* Mapeo a variables de shadcn */
   --background: #ffffff;
-  --foreground: #171717;
-}
+  --foreground: #353535;
+  --card: #ffffff;
+  --card-foreground: #353535;
+  --primary: #3c6e71;
+  --primary-foreground: #ffffff;
+  --secondary: #284b63;
+  --secondary-foreground: #ffffff;
+  --muted: #d9d9d9;
+  --muted-foreground: #6b7280;
+  --border: #d9d9d9;
+  --input: #d9d9d9;
+  --ring: #3c6e71;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* SLA semafórico */
+  --sla-ok: #22c55e;
+  --sla-warning: #eab308;
+  --sla-critical: #ef4444;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Sidebar (preparado para después) */
+  --sidebar-bg: #353535;
+  --sidebar-text: #ffffff;
+  --sidebar-accent: #3c6e71;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }

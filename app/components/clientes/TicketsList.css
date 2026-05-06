@@ -1,0 +1,92 @@
+.tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tickets-list__item {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s ease;
+}
+
+.tickets-list__item:hover {
+  border-color: #3c6e71;
+}
+
+.tickets-list__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.375rem;
+}
+
+.tickets-list__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #353535;
+}
+
+.tickets-list__badges {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.tickets-list__badge {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.tickets-list__badge--status-abierto {
+  border: 1px solid #284b63;
+  color: #284b63;
+}
+
+.tickets-list__badge--status-en_progreso {
+  background-color: #284b63;
+  color: #ffffff;
+}
+
+.tickets-list__badge--status-resuelto {
+  background-color: #3c6e71;
+  color: #ffffff;
+}
+
+.tickets-list__badge--priority-urgente {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.tickets-list__badge--priority-alta {
+  background-color: #353535;
+  color: #ffffff;
+}
+
+.tickets-list__badge--priority-media {
+  background-color: #d9d9d9;
+  color: #353535;
+}
+
+.tickets-list__badge--priority-baja {
+  border: 1px solid #d9d9d9;
+  color: #6b7280;
+}
+
+.tickets-list__description {
+  font-size: 0.8rem;
+  color: #6b7280;
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+}
+
+.tickets-list__meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #9ca3af;
+}

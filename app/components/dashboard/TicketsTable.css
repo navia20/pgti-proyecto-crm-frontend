@@ -1,0 +1,201 @@
+.tickets-table-section {
+  margin-bottom: 2.5rem;
+}
+
+.tickets-table-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.tickets-table-section__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #353535;
+  margin-bottom: 0.25rem;
+}
+
+.tickets-table-section__subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.tickets-table-wrapper {
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.tickets-table-wrapper table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tickets-table-wrapper thead tr {
+  background-color: #284b63;
+}
+
+.tickets-table-wrapper thead th {
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  letter-spacing: 0.03em;
+}
+
+.tickets-table-wrapper thead th:last-child {
+  text-align: right;
+}
+
+.tickets-table-wrapper tbody tr {
+  border-bottom: 1px solid #d9d9d9;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.tickets-table-wrapper tbody tr:last-child {
+  border-bottom: none;
+}
+
+.tickets-table-wrapper tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+.tickets-table-wrapper tbody td {
+  padding: 0.875rem 1rem;
+  font-size: 0.875rem;
+  color: #353535;
+}
+
+.ticket-id {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.ticket-title {
+  color: #353535;
+  font-weight: 400;
+  max-width: 280px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ticket-agent {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.ticket-category {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.ticket-time {
+  text-align: right;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+/* Badges de prioridad */
+.badge-priority {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.badge-priority--urgent {
+  background-color: #ef4444;
+  color: #ffffff;
+}
+
+.badge-priority--high {
+  background-color: #353535;
+  color: #ffffff;
+}
+
+.badge-priority--medium {
+  background-color: #d9d9d9;
+  color: #353535;
+}
+
+.badge-priority--low {
+  background-color: transparent;
+  color: #6b7280;
+  border-color: #d9d9d9;
+}
+
+/* Badges de estado */
+.badge-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+
+.badge-status--open {
+  background-color: transparent;
+  color: #353535;
+  border-color: #d9d9d9;
+}
+
+.badge-status--in-progress {
+  background-color: #353535;
+  color: #ffffff;
+}
+
+.badge-status--resolved {
+  background-color: #d9d9d9;
+  color: #353535;
+}
+
+/* SLA semafórico */
+.sla-cell {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.sla-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sla-dot--ok {
+  background-color: #22c55e;
+}
+
+.sla-dot--warning {
+  background-color: #eab308;
+}
+
+.sla-dot--critical {
+  background-color: #ef4444;
+}
+
+.sla-text--ok {
+  color: #6b7280;
+}
+
+.sla-text--warning {
+  color: #eab308;
+  font-weight: 500;
+}
+
+.sla-text--critical {
+  color: #ef4444;
+  font-weight: 600;
+}

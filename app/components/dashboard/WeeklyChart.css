@@ -1,0 +1,26 @@
+.weekly-chart {
+  margin-bottom: 2rem;
+}
+
+.weekly-chart__header {
+  margin-bottom: 1.25rem;
+}
+
+.weekly-chart__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #353535;
+  margin-bottom: 0.25rem;
+}
+
+.weekly-chart__subtitle {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.weekly-chart__card {
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  padding: 1.5rem;
+}

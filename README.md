@@ -34,3 +34,107 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+
+```
+pgti-proyecto-crm-frontend
+├─ AGENTS.md
+├─ app
+│  ├─ components
+│  │  ├─ clientes
+│  │  │  ├─ ActivityTimeline.css
+│  │  │  ├─ ActivityTimeline.tsx
+│  │  │  ├─ ClienteHeader.css
+│  │  │  ├─ ClienteHeader.tsx
+│  │  │  ├─ ClienteMetrics.css
+│  │  │  ├─ ClienteMetrics.tsx
+│  │  │  ├─ DealsList.css
+│  │  │  ├─ DealsList.tsx
+│  │  │  ├─ TicketsList.css
+│  │  │  └─ TicketsList.tsx
+│  │  ├─ dashboard
+│  │  │  ├─ Kpicard.css
+│  │  │  ├─ Kpicard.tsx
+│  │  │  ├─ TicketsTable.css
+│  │  │  ├─ TicketsTable.tsx
+│  │  │  ├─ WeeklyChart.css
+│  │  │  └─ WeeklyChart.tsx
+│  │  ├─ duplicados
+│  │  │  ├─ ComparisonView.css
+│  │  │  ├─ ComparisonView.tsx
+│  │  │  ├─ DuplicatesList.css
+│  │  │  └─ DuplicatesList.tsx
+│  │  ├─ layout
+│  │  │  ├─ Sidebar.css
+│  │  │  ├─ Sidebar.tsx
+│  │  │  ├─ Topbar.css
+│  │  │  └─ Topbar.tsx
+│  │  ├─ soporte
+│  │  │  ├─ AgentTable.css
+│  │  │  ├─ AgentTable.tsx
+│  │  │  ├─ MetricCard.css
+│  │  │  ├─ MetricCard.tsx
+│  │  │  ├─ PriorityChart.css
+│  │  │  ├─ PriorityChart.tsx
+│  │  │  ├─ TrendChart.css
+│  │  │  └─ TrendChart.tsx
+│  │  └─ tickets
+│  │     ├─ ActivityPanel.css
+│  │     ├─ ActivityPanel.tsx
+│  │     ├─ MessageThread.css
+│  │     ├─ MessageThread.tsx
+│  │     ├─ TicketDetail.css
+│  │     └─ TicketDetail.tsx
+│  ├─ favicon.ico
+│  ├─ globals.css
+│  ├─ lib
+│  │  ├─ mocks
+│  │  │  ├─ clientes.mock.ts
+│  │  │  ├─ soporte.mock.ts
+│  │  │  └─ tickets.mock.ts
+│  │  └─ types
+│  │     ├─ cliente.types.ts
+│  │     └─ ticket.types.ts
+│  ├─ page.tsx
+│  └─ pages
+│     ├─ clientes.tsx
+│     ├─ dashboard.tsx
+│     ├─ duplicados.tsx
+│     ├─ layout.tsx
+│     ├─ soporte.tsx
+│     └─ tickets.tsx
+├─ CLAUDE.md
+├─ components
+│  └─ ui
+│     ├─ avatar.tsx
+│     ├─ badge.tsx
+│     ├─ button.tsx
+│     ├─ card.tsx
+│     ├─ dropdown-menu.tsx
+│     ├─ input.tsx
+│     ├─ scroll-area.tsx
+│     ├─ select.tsx
+│     ├─ separator.tsx
+│     ├─ table.tsx
+│     ├─ tabs.tsx
+│     └─ textarea.tsx
+├─ components.json
+├─ docker-compose.yml
+├─ Dockerfile
+├─ eslint.config.mjs
+├─ lib
+│  └─ utils.ts
+├─ next.config.ts
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.mjs
+├─ public
+│  ├─ file.svg
+│  ├─ globe.svg
+│  ├─ next.svg
+│  ├─ vercel.svg
+│  └─ window.svg
+├─ README.md
+└─ tsconfig.json
+
+```

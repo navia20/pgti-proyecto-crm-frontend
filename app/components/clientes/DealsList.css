@@ -1,0 +1,99 @@
+.deals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.deals-list__item {
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  transition: border-color 0.15s ease;
+}
+
+.deals-list__item:hover {
+  border-color: #3c6e71;
+}
+
+.deals-list__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+}
+
+.deals-list__title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #353535;
+}
+
+.deals-list__stage {
+  font-size: 0.7rem;
+  font-weight: 500;
+  padding: 0.2rem 0.6rem;
+  border-radius: 9999px;
+}
+
+.deals-list__stage--Negociación {
+  background-color: #ede9fe;
+  color: #7c3aed;
+}
+
+.deals-list__stage--Propuesta {
+  background-color: #dbeafe;
+  color: #2563eb;
+}
+
+.deals-list__stage--Calificación {
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+
+.deals-list__stage--Prospección {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.deals-list__stage--Cerrado {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.deals-list__meta {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.deals-list__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.78rem;
+  color: #6b7280;
+}
+
+.deals-list__value {
+  font-weight: 600;
+  color: #353535;
+}
+
+.deals-list__probability {
+  margin-top: 0.625rem;
+}
+
+.deals-list__probability-bar {
+  height: 4px;
+  background-color: #d9d9d9;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.deals-list__probability-fill {
+  height: 100%;
+  background-color: #3c6e71;
+  border-radius: 9999px;
+  transition: width 0.3s ease;
+}
