@@ -1,0 +1,50 @@
+.priority-chart {
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.priority-chart__header {
+  margin-bottom: 1.25rem;
+}
+
+.priority-chart__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #353535;
+}
+
+.priority-chart__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.priority-chart__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.priority-chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #353535;
+}
+
+.priority-chart__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.priority-chart__legend-count {
+  font-weight: 600;
+  margin-left: auto;
+  padding-left: 1rem;
+}

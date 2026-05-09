@@ -1,0 +1,99 @@
+.agent-table {
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.agent-table__header {
+  margin-bottom: 1.25rem;
+}
+
+.agent-table__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #353535;
+}
+
+.agent-table__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.agent-table__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 0;
+  border-bottom: 1px solid #d9d9d9;
+}
+
+.agent-table__row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.agent-table__row:first-child {
+  padding-top: 0;
+}
+
+.agent-table__left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.agent-table__rank {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: #284b63;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.agent-table__rank--top {
+  background-color: #3c6e71;
+}
+
+.agent-table__name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #353535;
+}
+
+.agent-table__tickets {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.agent-table__right {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.agent-table__stat {
+  text-align: right;
+}
+
+.agent-table__stat-label {
+  font-size: 0.7rem;
+  color: #6b7280;
+  margin-bottom: 0.125rem;
+}
+
+.agent-table__stat-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #353535;
+}
+
+.agent-table__stat-value--csat {
+  color: #3c6e71;
+}
