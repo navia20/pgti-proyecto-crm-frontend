@@ -1,19 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Search } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, Search, Users } from "lucide-react";
 import ClienteHeader from "../../components/clientes/ClienteHeader";
 import ClienteMetrics from "../../components/clientes/ClienteMetrics";
 import ActivityTimeline from "../../components/clientes/ActivityTimeline";
 import DealsList from "../../components/clientes/DealsList";
 import TicketsList from "../../components/clientes/TicketsList";
-import {
-  mockClientePerfil,
-  mockClienteMetrics,
-  mockActividades,
-  mockDeals,
-  mockTicketsCliente,
-} from "../../lib/mocks/clientes.mock";
+import EmptyState from "../../components/ui/EmptyState";
+import { SkeletonTable, SkeletonProfile } from "../../components/ui/Skeleton";
+import { mockClientePerfil, mockClienteMetrics, mockActividades, mockDeals, mockTicketsCliente, mockClienteSalud } from "../../lib/mocks/clientes.mock";
 
 type TabType = "resumen" | "actividad" | "deals" | "tickets";
 
@@ -35,6 +31,7 @@ export default function ClientesPage() {
   const [selectedCliente, setSelectedCliente] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>("resumen");
   const [search, setSearch] = useState("");
+  const [isLoading] = useState(false); // TODO: reemplazar con fetch real
 
   const filtered = mockClientesList.filter(
     (c) =>
@@ -58,7 +55,7 @@ export default function ClientesPage() {
         </div>
 
         {/* Header del cliente */}
-        <ClienteHeader cliente={mockClientePerfil} />
+        <ClienteHeader cliente={mockClientePerfil} salud={mockClienteSalud} />
 
         {/* Métricas */}
         <ClienteMetrics metrics={mockClienteMetrics} />
@@ -170,80 +167,96 @@ export default function ClientesPage() {
           type="text"
           placeholder="Buscar por nombre, empresa o email..."
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
           className="text-sm text-[#353535] bg-transparent outline-none w-full placeholder:text-[#9ca3af]"
         />
       </div>
 
-      {/* Tabla */}
-      <div className="border border-[#d9d9d9] rounded-xl overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-[#284b63]">
-              {["Nombre", "Empresa", "Email", "Ubicación", "Estado", "LTV", "Tickets Abiertos", ""].map(
-                (h) => (
+      {/* Tabla con estados */}
+      {isLoading ? (
+        <SkeletonTable rows={6} />
+      ) : filtered.length === 0 ? (
+        <div className="border border-[#d9d9d9] rounded-xl">
+          <EmptyState
+            icon={Users}
+            title="No se encontraron clientes"
+            description={
+              search
+                ? `No hay clientes que coincidan con "${search}". Intenta con otro término.`
+                : "Aún no hay clientes registrados en el sistema."
+            }
+            actionLabel={search ? "Limpiar búsqueda" : undefined}
+            onAction={search ? () => setSearch("") : undefined}
+          />
+        </div>
+      ) : (
+        <div className="border border-[#d9d9d9] rounded-xl overflow-hidden">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-[#284b63]">
+                {["Nombre", "Empresa", "Email", "Ubicación", "Estado", "LTV", "Tickets Abiertos", ""].map((h) => (
                   <th
                     key={h}
                     className="text-left text-white text-xs font-medium px-4 py-3 tracking-wide"
                   >
                     {h}
                   </th>
-                )
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((cliente) => (
-              <tr
-                key={cliente.id}
-                className="border-b border-[#d9d9d9] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => setSelectedCliente(cliente.id)}
-              >
-                <td className="px-4 py-3 text-sm font-medium text-[#353535]">
-                  {cliente.name}
-                </td>
-                <td className="px-4 py-3 text-sm text-[#6b7280]">
-                  {cliente.company}
-                </td>
-                <td className="px-4 py-3 text-sm text-[#6b7280]">
-                  {cliente.email}
-                </td>
-                <td className="px-4 py-3 text-sm text-[#6b7280]">
-                  {cliente.location}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      cliente.status === "active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-gray-100 text-gray-500"
-                    }`}
-                  >
-                    {cliente.status === "active" ? "Activo" : "Inactivo"}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-sm font-medium text-[#353535]">
-                  {cliente.ltv}
-                </td>
-                <td className="px-4 py-3 text-sm text-center text-[#6b7280]">
-                  {cliente.tickets}
-                </td>
-                <td className="px-4 py-3">
-                  <button
-                    className="text-xs text-[#3c6e71] hover:underline font-medium"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedCliente(cliente.id);
-                    }}
-                  >
-                    Ver perfil
-                  </button>
-                </td>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filtered.map((cliente) => (
+                <tr
+                  key={cliente.id}
+                  className="border-b border-[#d9d9d9] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
+                  onClick={() => setSelectedCliente(cliente.id)}
+                >
+                  <td className="px-4 py-3 text-sm font-medium text-[#353535]">
+                    {cliente.name}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#6b7280]">
+                    {cliente.company}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#6b7280]">
+                    {cliente.email}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-[#6b7280]">
+                    {cliente.location}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        cliente.status === "active"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-gray-100 text-gray-500"
+                      }`}
+                    >
+                      {cliente.status === "active" ? "Activo" : "Inactivo"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium text-[#353535]">
+                    {cliente.ltv}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-center text-[#6b7280]">
+                    {cliente.tickets}
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      className="text-xs text-[#3c6e71] hover:underline font-medium"
+                      onClick={(e: React.MouseEvent) => {
+                        e.stopPropagation();
+                        setSelectedCliente(cliente.id);
+                      }}
+                    >
+                      Ver perfil
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

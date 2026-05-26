@@ -1,31 +1,32 @@
 "use client";
 
 import "./TicketsTable.css";
-import { useState } from "react";
-import { Ticket, TicketPriority, TicketStatus, SlaStatus } from "@/app/lib/types/ticket.types";
+import React from "react";
+import { Ticket, SlaStatus } from "../../lib/types/ticket.types";
 
 interface TicketsTableProps {
   tickets: Ticket[];
   filter: string;
 }
 
-function getPriorityLabel(priority: TicketPriority): string {
-  const labels: Record<TicketPriority, string> = {
-    urgent: "Urgente",
-    high: "Alta",
-    medium: "Media",
-    low: "Baja",
+function getPrioridadLabel(prioridad: string): string {
+  const labels: Record<string, string> = {
+    Critica: "Crítica",
+    Alta: "Alta",
+    Media: "Media",
+    Baja: "Baja",
   };
-  return labels[priority];
+  return labels[prioridad] ?? prioridad;
 }
 
-function getStatusLabel(status: TicketStatus): string {
-  const labels: Record<TicketStatus, string> = {
-    open: "Abierto",
-    "in-progress": "En progreso",
-    resolved: "Resuelto",
+function getEstadoLabel(estado: string): string {
+  const labels: Record<string, string> = {
+    Abierto: "Abierto",
+    Progreso: "En progreso",
+    Resuelto: "Resuelto",
+    Cerrado: "Cerrado",
   };
-  return labels[status];
+  return labels[estado] ?? estado;
 }
 
 function getSlaStatus(percent: number): SlaStatus {
@@ -40,14 +41,44 @@ function getSlaLabel(percent: number): string {
   return `${percent}%`;
 }
 
+function applyFilter(tickets: Ticket[], filter: string): Ticket[] {
+  if (filter === "all") return tickets;
+
+  // Filtros por estado
+  if (["Abierto", "Progreso", "Resuelto", "Cerrado"].includes(filter)) {
+    return tickets.filter((t) => t.estado === filter);
+  }
+
+  // Filtros por prioridad
+  if (["Critica", "Alta", "Media", "Baja"].includes(filter)) {
+    return tickets.filter((t) => t.prioridad === filter);
+  }
+
+  // Filtros por canal
+  if (["Chat", "Email", "Telefono", "App"].includes(filter)) {
+    return tickets.filter((t) => t.canal === filter);
+  }
+
+  return tickets;
+}
+
 export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
-  const filtered = tickets.filter((t) => {
-    if (filter === "all") return true;
-    if (filter === "open") return t.status === "open";
-    if (filter === "in-progress") return t.status === "in-progress";
-    if (filter === "urgent") return t.priority === "urgent";
-    return true;
-  });
+  const filtered = applyFilter(tickets, filter);
+
+  const getFilterLabel = (): string => {
+    const labels: Record<string, string> = {
+      Abierto: "Abiertos",
+      Progreso: "En progreso",
+      Resuelto: "Resueltos",
+      Cerrado: "Cerrados",
+      Critica: "Críticos",
+      Chat: "Canal Chat",
+      Email: "Canal Email",
+      Telefono: "Canal Teléfono",
+      App: "Canal App",
+    };
+    return labels[filter] ?? filter;
+  };
 
   return (
     <div className="tickets-table-section">
@@ -56,7 +87,7 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
           <div className="tickets-table-section__title">Tickets Activos</div>
           <div className="tickets-table-section__subtitle">
             {filtered.length} {filtered.length === 1 ? "ticket" : "tickets"}
-            {filter !== "all" && ` · Filtrado por ${filter}`}
+            {filter !== "all" && ` · Filtrado por ${getFilterLabel()}`}
           </div>
         </div>
       </div>
@@ -66,52 +97,64 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
           <thead>
             <tr>
               <th>ID</th>
-              <th>Título</th>
+              <th>Asunto</th>
+              <th>Canal</th>
               <th>Prioridad</th>
               <th>Estado</th>
               <th>Agente</th>
-              <th>Categoría</th>
+              <th>Cliente</th>
               <th>SLA</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((ticket) => {
-              const slaStatus = getSlaStatus(ticket.slaPercent);
-              return (
-                <tr key={ticket.id}>
-                  <td>
-                    <span className="ticket-id">{ticket.id}</span>
-                  </td>
-                  <td>
-                    <span className="ticket-title">{ticket.title}</span>
-                  </td>
-                  <td>
-                    <span className={`badge-priority badge-priority--${ticket.priority}`}>
-                      {getPriorityLabel(ticket.priority)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge-status badge-status--${ticket.status}`}>
-                      {getStatusLabel(ticket.status)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="ticket-agent">{ticket.agent}</span>
-                  </td>
-                  <td>
-                    <span className="ticket-category">{ticket.category}</span>
-                  </td>
-                  <td>
-                    <div className="sla-cell">
-                      <div className={`sla-dot sla-dot--${slaStatus}`} />
-                      <span className={`sla-text--${slaStatus}`}>
-                        {getSlaLabel(ticket.slaPercent)}
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#6b7280", fontSize: "0.875rem" }}>
+                  No hay tickets que coincidan con el filtro seleccionado
+                </td>
+              </tr>
+            ) : (
+              filtered.map((ticket) => {
+                const slaStatus = getSlaStatus(ticket.slaPercent);
+                return (
+                  <tr key={ticket.id}>
+                    <td>
+                      <span className="ticket-id">{ticket.id}</span>
+                    </td>
+                    <td>
+                      <span className="ticket-title">{ticket.asunto}</span>
+                    </td>
+                    <td>
+                      <span className="ticket-category">{ticket.canal}</span>
+                    </td>
+                    <td>
+                      <span className={`badge-priority badge-priority--${ticket.prioridad.toLowerCase()}`}>
+                        {getPrioridadLabel(ticket.prioridad)}
                       </span>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
+                    </td>
+                    <td>
+                      <span className={`badge-status badge-status--${ticket.estado.toLowerCase()}`}>
+                        {getEstadoLabel(ticket.estado)}
+                      </span>
+                    </td>
+                    <td>
+                      <span className="ticket-agent">{ticket.agente_nombre}</span>
+                    </td>
+                    <td>
+                      <span className="ticket-agent">{ticket.cliente_nombre}</span>
+                    </td>
+                    <td>
+                      <div className="sla-cell">
+                        <div className={`sla-dot sla-dot--${slaStatus}`} />
+                        <span className={`sla-text--${slaStatus}`}>
+                          {getSlaLabel(ticket.slaPercent)}
+                        </span>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>

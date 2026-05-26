@@ -1,5 +1,6 @@
 import "./DuplicatesList.css";
-import { DuplicateGroup } from "../../lib/types/cliente.types";
+import React from "react";
+import { DuplicateGroup, ClienteDuplicado } from "../../lib/types/cliente.types";
 
 interface DuplicatesListProps {
   duplicates: DuplicateGroup[];
@@ -13,11 +14,11 @@ function getScoreClass(score: number): string {
   return "duplicates-list__score--low";
 }
 
-export default function DuplicatesList({
-  duplicates,
-  selectedId,
-  onSelect,
-}: DuplicatesListProps) {
+function getNombre(record: ClienteDuplicado): string {
+  return record.nombre_completo;
+}
+
+export default function DuplicatesList({ duplicates, selectedId, onSelect }: DuplicatesListProps) {
   return (
     <div className="duplicates-list">
       <div className="duplicates-list__header">
@@ -36,32 +37,26 @@ export default function DuplicatesList({
           return (
             <div
               key={dup.id}
-              className={`duplicates-list__item ${
-                isActive ? "duplicates-list__item--active" : ""
-              }`}
+              className={`duplicates-list__item ${isActive ? "duplicates-list__item--active" : ""}`}
               onClick={() => onSelect(dup)}
             >
               <div className="duplicates-list__item-top">
                 <div>
                   <div className="duplicates-list__item-name">
-                    {primary.name}
+                    {getNombre(primary)}
                   </div>
                   <div className="duplicates-list__item-email">
                     {primary.email}
                   </div>
                 </div>
-                <span
-                  className={`duplicates-list__score ${getScoreClass(
-                    dup.similarityScore
-                  )}`}
-                >
+                <span className={`duplicates-list__score ${getScoreClass(dup.similarityScore)}`}>
                   {dup.similarityScore}%
                 </span>
               </div>
 
               <div className="duplicates-list__item-secondary">
                 <div className="duplicates-list__item-secondary-name">
-                  {secondary.name}
+                  {getNombre(secondary)}
                 </div>
                 <div className="duplicates-list__item-secondary-email">
                   {secondary.email}
