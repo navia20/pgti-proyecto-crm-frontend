@@ -21,10 +21,10 @@ function getPrioridadLabel(prioridad: string): string {
 
 function getEstadoLabel(estado: string): string {
   const labels: Record<string, string> = {
-    Abierto: "Abierto",
-    Progreso: "En progreso",
-    Resuelto: "Resuelto",
-    Cerrado: "Cerrado",
+    abierto: "Abierto",
+    progreso: "En progreso",
+    resuelto: "Resuelto",
+    cerrado: "Cerrado",
   };
   return labels[estado] ?? estado;
 }
@@ -43,22 +43,15 @@ function getSlaLabel(percent: number): string {
 
 function applyFilter(tickets: Ticket[], filter: string): Ticket[] {
   if (filter === "all") return tickets;
-
-  // Filtros por estado
-  if (["Abierto", "Progreso", "Resuelto", "Cerrado"].includes(filter)) {
+  if (["abierto", "progreso", "resuelto", "cerrado"].includes(filter)) {
     return tickets.filter((t) => t.estado === filter);
   }
-
-  // Filtros por prioridad
-  if (["Critica", "Alta", "Media", "Baja"].includes(filter)) {
+  if (["critica", "alta", "media", "baja"].includes(filter)) {
     return tickets.filter((t) => t.prioridad === filter);
   }
-
-  // Filtros por canal
-  if (["Chat", "Email", "Telefono", "App"].includes(filter)) {
+  if (["chat", "email", "telefono", "app"].includes(filter)) {
     return tickets.filter((t) => t.canal === filter);
   }
-
   return tickets;
 }
 
@@ -128,7 +121,7 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
                       <span className="ticket-category">{ticket.canal}</span>
                     </td>
                     <td>
-                      <span className={`badge-priority badge-priority--${ticket.prioridad.toLowerCase()}`}>
+                      <span className={`badge-priority badge-priority--${ticket.prioridad}`}>
                         {getPrioridadLabel(ticket.prioridad)}
                       </span>
                     </td>

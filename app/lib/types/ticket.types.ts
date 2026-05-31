@@ -1,84 +1,65 @@
-// ============================================
-// ENUMS — alineados al MER
-// ============================================
-export type TicketEstado = "Abierto" | "Progreso" | "Resuelto" | "Cerrado";
-export type TicketPrioridad = "Baja" | "Media" | "Alta" | "Critica";
-export type TicketCanal = "Chat" | "Email" | "Telefono" | "App";
-export type AutorTipo = "Cliente" | "Agente" | "Sistema";
+export type TicketEstado = "abierto" | "progreso" | "resuelto" | "cerrado";
+export type TicketPrioridad = "baja" | "media" | "alta" | "critica";
+export type TicketCanal = "chat" | "email" | "telefono" | "app";
+export type AutorTipo = "cliente" | "agente" | "sistema";
 export type SlaStatus = "ok" | "warning" | "critical";
 
-// ============================================
-// ENTIDADES PRINCIPALES — según MER
-// ============================================
-
 export interface Ticket {
-  id: string;                          // UUID
+  id: string;
   cliente_id: number;
-  agente_id: string | null;            // UUID, nullable si sin asignar
+  agente_id: string | null;
   asunto: string;
   estado: TicketEstado;
   prioridad: TicketPrioridad;
   canal: TicketCanal;
-  fecha_vencimiento_sla: string;       // Timestamp ISO
-  pedido_id_ref: string | null;        // Ref externa nullable
-  suscripcion_id_ref: string | null;   // Ref externa nullable
-  // Campos calculados para UI
+  fecha_vencimiento_sla: string;
+  pedido_id_ref: string | null;
+  suscripcion_id_ref: string | null;
   slaPercent: number;
-  agente_nombre: string;               // Join para mostrar en tabla
-  cliente_nombre: string;              // Join para mostrar en tabla
+  agente_nombre: string;
+  cliente_nombre: string;
 }
 
 export interface Interaccion {
-  id: string;                          // UUID
+  id: string;
   ticket_id: string;
   autor_tipo: AutorTipo;
-  autor_id: string;                    // UUID
+  autor_id: string;
   contenido: string;
   es_nota_interna: boolean;
-  creado_en: string;                   // Timestamp ISO
-  // Campos calculados para UI
+  creado_en: string;
   autor_nombre: string;
   autor_iniciales: string;
 }
 
 export interface ArticuloKB {
-  id: string;                          // UUID
+  id: string;
   titulo: string;
   contenido: string;
   categoria: string;
 }
 
 export interface TicketArticulo {
-  id: string;                          // UUID
+  id: string;
   ticket_id: string;
   articulo_id: string;
   fue_enviado_al_cliente: boolean;
   agente_id: string;
-  vinculado_en: string;                // Timestamp ISO
-  // Campo calculado para UI
+  vinculado_en: string;
   articulo?: ArticuloKB;
 }
 
-// ============================================
-// VISTA DETALLE — agrupación para UI
-// ============================================
 export interface TicketDetalle extends Ticket {
   interacciones: Interaccion[];
   articulos_kb: TicketArticulo[];
   tags: string[];
 }
 
-// ============================================
-// CHART DATA
-// ============================================
 export interface WeeklyChartData {
   day: string;
   tickets: number;
 }
 
-// ============================================
-// FORMULARIO CREAR TICKET
-// ============================================
 export interface CrearTicketForm {
   cliente_id: number | null;
   asunto: string;
@@ -89,7 +70,7 @@ export interface CrearTicketForm {
   suscripcion_id_ref: string;
 }
 
-// Aliases para compatibilidad con componentes existentes
+// Aliases para compatibilidad
 export type TicketActivity = {
   id: number;
   type: "status_change" | "assignment" | "priority_change" | "tag_added";

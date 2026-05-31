@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Filter, Search, User, LayoutGrid, Ticket } from "lucide-react";
 import KpiCard from "../../components/dashboard/Kpicard";
 import TicketsTable from "../../components/dashboard/TicketsTable";
@@ -8,37 +8,57 @@ import WeeklyChart from "../../components/dashboard/WeeklyChart";
 import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonKpiGrid, SkeletonTable } from "../../components/ui/Skeleton";
 import { mockTickets, mockWeeklyChart } from "../../lib/mocks/tickets.mock";
+import { ticketsApi } from "../../lib/api/tickets.api";
 import { Ticket as TicketType } from "../../lib/types/ticket.types";
 
 const AGENTE_ACTUAL = "agt-001";
 
 const filterOptions = [
   { value: "all", label: "Todos los tickets" },
-  { value: "Abierto", label: "Abiertos" },
-  { value: "Progreso", label: "En progreso" },
-  { value: "Resuelto", label: "Resueltos" },
-  { value: "Critica", label: "Críticos" },
-  { value: "Chat", label: "Canal: Chat" },
-  { value: "Email", label: "Canal: Email" },
-  { value: "Telefono", label: "Canal: Teléfono" },
-  { value: "App", label: "Canal: App" },
+  { value: "abierto", label: "Abiertos" },
+  { value: "progreso", label: "En progreso" },
+  { value: "resuelto", label: "Resueltos" },
+  { value: "critica", label: "Críticos" },
+  { value: "chat", label: "Canal: Chat" },
+  { value: "email", label: "Canal: Email" },
+  { value: "telefono", label: "Canal: Teléfono" },
+  { value: "app", label: "Canal: App" },
 ];
 
 export default function DashboardPage() {
   const [filter, setFilter] = useState("all");
   const [vistaPropia, setVistaPropia] = useState(false);
-  // TODO: reemplazar con estado real desde fetch
-  const [isLoading] = useState(false);
+  const [tickets, setTickets] = useState<TicketType[]>(mockTickets);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await ticketsApi.getAll({ take: 50 });
+        setTickets(data.length > 0 ? data : mockTickets);
+      } catch {
+        // fallback a mocks si el backend no responde
+        setTickets(mockTickets);
+        setError("Usando datos locales — backend no disponible");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTickets();
+  }, []);
 
   const ticketsFiltradosPorVista = vistaPropia
-    ? mockTickets.filter((t: TicketType) => t.agente_id === AGENTE_ACTUAL)
-    : mockTickets;
+    ? tickets.filter((t: TicketType) => t.agente_id === AGENTE_ACTUAL)
+    : tickets;
 
-  const openTickets = ticketsFiltradosPorVista.filter((t: TicketType) => t.estado === "Abierto").length;
-  const urgentTickets = ticketsFiltradosPorVista.filter((t: TicketType) => t.prioridad === "Critica").length;
-  const inProgressTickets = ticketsFiltradosPorVista.filter((t: TicketType) => t.estado === "Progreso").length;
-  const resolvedToday = ticketsFiltradosPorVista.filter((t: TicketType) => t.estado === "Resuelto").length;
-
+  const openTickets = ticketsFiltradosPorVista.filter((t) => t.estado === "abierto").length;
+  const urgentTickets = ticketsFiltradosPorVista.filter((t) => t.prioridad === "critica").length;
+  const inProgressTickets = ticketsFiltradosPorVista.filter((t) => t.estado === "progreso").length;
+  const resolvedToday = ticketsFiltradosPorVista.filter((t) => t.estado === "resuelto").length;
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
       {/* Header */}
@@ -98,15 +118,22 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Banner error/fallback */}
+      {error && (
+        <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          ⚠️ {error}
+        </div>
+      )}
+
       {/* Indicador vista propia */}
-      {vistaPropia && (
+      {vistaPropia && !error && (
         <div className="flex items-center gap-2 mb-4 text-sm text-[#284b63] bg-[#f0f7f7] border border-[#3c6e71] rounded-lg px-3 py-2 w-fit">
           <User size={14} />
           Mostrando solo tus tickets asignados
         </div>
       )}
 
-      {/* Loading state */}
+      {/* Loading */}
       {isLoading ? (
         <>
           <SkeletonKpiGrid />
@@ -128,7 +155,7 @@ export default function DashboardPage() {
                 title={vistaPropia ? "No tienes tickets asignados" : "No hay tickets"}
                 description={
                   vistaPropia
-                    ? "No tienes tickets asignados actualmente. Los tickets que se te asignen aparecerán aquí."
+                    ? "No tienes tickets asignados actualmente."
                     : "No hay tickets que coincidan con los filtros seleccionados."
                 }
                 actionLabel={vistaPropia ? undefined : "Limpiar filtros"}

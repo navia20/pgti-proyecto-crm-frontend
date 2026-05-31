@@ -1,5 +1,6 @@
 "use client";
 
+import { interaccionesApi } from "../../lib/api/interacciones.api";
 import "./Topbar.css";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -10,9 +11,12 @@ import {
   HeadphonesIcon,
   Plus,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import CrearTicketModal from "../tickets/CrearTicketModal";
 import { CrearTicketForm } from "../../lib/types/ticket.types";
+import { ticketsApi } from "../../lib/api/tickets.api";
+import { clientesApi } from "../../lib/api/clientes.api";
+import { ClientePerfil } from "../../lib/types/cliente.types";
 
 const navItems = [
   { label: "Dashboard", href: "/pages/dashboard", icon: LayoutDashboard },
@@ -26,15 +30,44 @@ export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [modalOpen, setModalOpen] = useState(false);
+  const [clientes, setClientes] = useState<ClientePerfil[]>([]);
 
-  const handleCrearTicket = (form: CrearTicketForm) => {
-    // TODO: reemplazar con fetch POST /api/v1/tickets
-    console.log("Ticket creado:", form);
-  };
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const data = await clientesApi.getAll();
+        setClientes(data);
+      } catch {
+        setClientes([]);
+      }
+    };
+    fetchClientes();
+  }, []);
+
+const handleCrearTicket = async (form: CrearTicketForm) => {
+  try {
+    const ticket = await ticketsApi.crear(form);
+    // Si hay descripción, crearla como primera interacción
+    if (form.descripcion.trim() && ticket.id) {
+      await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "cliente",
+        autor_id: "00000000-0000-0000-0000-000000000001",
+        contenido: form.descripcion,
+        es_nota_interna: false,
+      });
+    }
+    setModalOpen(false);
+    window.location.reload();
+  } catch (error) {
+    console.error("Error al crear ticket:", error);
+  }
+};
 
   return (
     <>
       <header className="topbar">
+        {/* Brand */}
         <div className="topbar__brand">
           <div className="topbar__brand-icon">
             <LayoutDashboard size={18} color="#ffffff" />
@@ -45,6 +78,7 @@ export default function Topbar() {
           </div>
         </div>
 
+        {/* Navegación */}
         <nav className="topbar__nav">
           {navItems.map(({ label, href, icon: Icon }) => {
             const isActive = pathname === href;
@@ -65,6 +99,7 @@ export default function Topbar() {
           })}
         </nav>
 
+        {/* Acciones */}
         <div className="topbar__actions">
           <button
             onClick={() => setModalOpen(true)}
@@ -73,7 +108,6 @@ export default function Topbar() {
             <Plus size={15} />
             Crear Ticket
           </button>
-
           <div className="topbar__user">
             <div className="topbar__user-avatar">AD</div>
             <span>Admin</span>
@@ -81,11 +115,11 @@ export default function Topbar() {
         </div>
       </header>
 
-      {/* Modal global */}
       <CrearTicketModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleCrearTicket}
+        clientes={clientes}
       />
     </>
   );

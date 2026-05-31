@@ -1,50 +1,43 @@
-"use client";
-import React from "react";
+import React, { useState } from "react";
 import "./CrearTicketModal.css";
-import { useState } from "react";
 import { X, Ticket, Clock, ChevronDown, ChevronUp } from "lucide-react";
 import {
   CrearTicketForm,
   TicketPrioridad,
   TicketCanal,
 } from "../../lib/types/ticket.types";
+import { ClientePerfil } from "../../lib/types/cliente.types";
 
 interface CrearTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (form: CrearTicketForm) => void;
+  clientes?: ClientePerfil[];
 }
 
-const canales: TicketCanal[] = ["Chat", "Email", "Telefono", "App"];
-const prioridades: TicketPrioridad[] = ["Baja", "Media", "Alta", "Critica"];
+const canales: TicketCanal[] = ["chat", "email", "telefono", "app"];
+const prioridades: TicketPrioridad[] = ["baja", "media", "alta", "critica"];
 
 const slaHoras: Record<TicketPrioridad, number> = {
-  Critica: 8,
-  Alta: 24,
-  Media: 48,
-  Baja: 72,
+  critica: 8,
+  alta: 24,
+  media: 48,
+  baja: 72,
 };
-
-const mockClientes = [
-  { id: 1, nombre: "María González" },
-  { id: 2, nombre: "Carlos Rodríguez" },
-  { id: 3, nombre: "Ana Martínez" },
-  { id: 4, nombre: "Pedro Sánchez" },
-];
 
 const initialForm: CrearTicketForm = {
   cliente_id: null,
   asunto: "",
-  prioridad: "Media",
-  canal: "Email",
+  prioridad: "media",
+  canal: "email",
   descripcion: "",
   pedido_id_ref: "",
   suscripcion_id_ref: "",
 };
 
 function getSlaClass(prioridad: TicketPrioridad): string {
-  if (prioridad === "Critica") return "modal__sla-preview--critical";
-  if (prioridad === "Alta") return "modal__sla-preview--warning";
+  if (prioridad === "critica") return "modal__sla-preview--critical";
+  if (prioridad === "alta") return "modal__sla-preview--warning";
   return "";
 }
 
@@ -52,6 +45,7 @@ export default function CrearTicketModal({
   isOpen,
   onClose,
   onSubmit,
+  clientes = [],
 }: CrearTicketModalProps) {
   const [form, setForm] = useState<CrearTicketForm>(initialForm);
   const [showOpcionales, setShowOpcionales] = useState(false);
@@ -63,22 +57,21 @@ export default function CrearTicketModal({
     form.asunto.trim() !== "" &&
     form.descripcion.trim() !== "";
 
-const handleChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
-) => {
-  const { name, value } = e.target;
-  setForm((prev: CrearTicketForm) => ({
-    ...prev,
-    [name]: name === "cliente_id" ? Number(value) : value,
-  }));
-};
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
+    const { name, value } = e.target;
+    setForm((prev: CrearTicketForm) => ({
+      ...prev,
+      [name]: name === "cliente_id" ? Number(value) : value,
+    }));
+  };
 
   const handleSubmit = () => {
     if (!isValid) return;
     onSubmit?.(form);
     setForm(initialForm);
-    setShowOpcionales((prev: boolean) => !prev);
-    onClose();
+    setShowOpcionales(false);
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -117,11 +110,15 @@ const handleChange = (
               className="modal__select"
             >
               <option value="">Selecciona un cliente...</option>
-              {mockClientes.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nombre}
-                </option>
-              ))}
+              {clientes.length > 0 ? (
+                clientes.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.nombre_completo} — {c.email}
+                  </option>
+                ))
+              ) : (
+                <option disabled>No hay clientes disponibles</option>
+              )}
             </select>
           </div>
 
@@ -155,7 +152,7 @@ const handleChange = (
               >
                 {canales.map((c) => (
                   <option key={c} value={c}>
-                    {c}
+                    {c.charAt(0).toUpperCase() + c.slice(1)}
                   </option>
                 ))}
               </select>
@@ -173,7 +170,7 @@ const handleChange = (
               >
                 {prioridades.map((p) => (
                   <option key={p} value={p}>
-                    {p}
+                    {p.charAt(0).toUpperCase() + p.slice(1)}
                   </option>
                 ))}
               </select>
@@ -196,7 +193,7 @@ const handleChange = (
               name="descripcion"
               value={form.descripcion}
               onChange={handleChange}
-              placeholder="Describe el problema en detalle. Incluye pasos para reproducirlo, mensajes de error, etc."
+              placeholder="Describe el problema en detalle..."
               className="modal__textarea"
             />
           </div>
@@ -205,15 +202,10 @@ const handleChange = (
           <div>
             <button
               className="modal__optional-toggle"
-              onClick={() => setShowOpcionales((prev) => !prev)}
+              onClick={() => setShowOpcionales((prev: boolean) => !prev)}
             >
-              {showOpcionales ? (
-                <ChevronUp size={14} />
-              ) : (
-                <ChevronDown size={14} />
-              )}
+              {showOpcionales ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               {showOpcionales ? "Ocultar" : "Mostrar"} campos opcionales
-              (referencias externas)
             </button>
 
             {showOpcionales && (
@@ -233,7 +225,6 @@ const handleChange = (
                       Referencia al Proyecto 3 (Pedidos)
                     </span>
                   </div>
-
                   <div className="modal__field">
                     <label className="modal__label">ID Suscripción</label>
                     <input

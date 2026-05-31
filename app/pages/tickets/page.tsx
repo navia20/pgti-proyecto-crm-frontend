@@ -1,31 +1,72 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ArrowLeft, Eye, Ticket } from "lucide-react";
 import TicketDetail from "../../components/tickets/TicketDetail";
 import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonTable } from "../../components/ui/Skeleton";
 import { mockTickets, mockTicketDetalle } from "../../lib/mocks/tickets.mock";
-import { Ticket as TicketType } from "../../lib/types/ticket.types";
+import { ticketsApi } from "../../lib/api/tickets.api";
+import { interaccionesApi } from "../../lib/api/interacciones.api";
+import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
 
 function getPrioridadLabel(prioridad: string) {
   const map: Record<string, string> = {
-    Critica: "Crítica", Alta: "Alta", Media: "Media", Baja: "Baja",
+    critica: "Crítica", alta: "Alta", media: "Media", baja: "Baja",
   };
   return map[prioridad] ?? prioridad;
 }
 
 function getEstadoLabel(estado: string) {
   const map: Record<string, string> = {
-    Abierto: "Abierto", Progreso: "En progreso", Resuelto: "Resuelto", Cerrado: "Cerrado",
+    abierto: "Abierto",
+    progreso: "En progreso",
+    resuelto: "Resuelto",
+    cerrado: "Cerrado",
   };
   return map[estado] ?? estado;
 }
 
 export default function TicketsPage() {
+  const [tickets, setTickets] = useState<TicketType[]>(mockTickets);
   const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
-  // TODO: reemplazar con estado real desde fetch
-  const [isLoading] = useState(false);
+  const [ticketDetalle, setTicketDetalle] = useState<TicketDetalle | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setIsLoading(true);
+        const data = await ticketsApi.getAll({ take: 50 });
+        setTickets(data.length > 0 ? data : mockTickets);
+      } catch {
+        setTickets(mockTickets);
+        setError("Usando datos locales — backend no disponible");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTickets();
+  }, []);
+
+  const handleSelectTicket = async (ticket: TicketType) => {
+    setSelectedTicket(ticket);
+    setIsLoadingDetalle(true);
+    try {
+      const [detalle, interacciones] = await Promise.all([
+        ticketsApi.getById(ticket.id),
+        interaccionesApi.getByTicket(ticket.id),
+      ]);
+      setTicketDetalle({ ...detalle, interacciones });
+    } catch {
+      // fallback a mock detalle
+      setTicketDetalle(mockTicketDetalle);
+    } finally {
+      setIsLoadingDetalle(false);
+    }
+  };
 
   if (selectedTicket) {
     return (
@@ -35,7 +76,7 @@ export default function TicketsPage() {
           style={{ minHeight: "52px" }}
         >
           <button
-            onClick={() => setSelectedTicket(null)}
+            onClick={() => { setSelectedTicket(null); setTicketDetalle(null); }}
             className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#353535] transition-colors"
           >
             <ArrowLeft size={16} />
@@ -43,13 +84,20 @@ export default function TicketsPage() {
           </button>
           <span className="text-[#d9d9d9]">|</span>
           <span className="text-sm font-mono text-[#6b7280]">
-            {mockTicketDetalle.id}
+            {selectedTicket.id}
           </span>
           <span className="text-sm text-[#353535] font-medium">
-            {mockTicketDetalle.asunto}
+            {selectedTicket.asunto}
           </span>
         </div>
-        <TicketDetail ticket={mockTicketDetalle} />
+
+        {isLoadingDetalle ? (
+          <div className="flex-1 flex items-center justify-center text-sm text-[#6b7280]">
+            Cargando detalle del ticket...
+          </div>
+        ) : (
+          <TicketDetail ticket={ticketDetalle ?? mockTicketDetalle} />
+        )}
       </div>
     );
   }
@@ -62,14 +110,20 @@ export default function TicketsPage() {
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {mockTickets.length} tickets en total
+            {tickets.length} tickets en total
           </p>
         </div>
       </div>
 
+      {error && (
+        <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          ⚠️ {error}
+        </div>
+      )}
+
       {isLoading ? (
         <SkeletonTable rows={8} />
-      ) : mockTickets.length === 0 ? (
+      ) : tickets.length === 0 ? (
         <div className="border border-[#d9d9d9] rounded-xl">
           <EmptyState
             icon={Ticket}
@@ -90,7 +144,7 @@ export default function TicketsPage() {
               </tr>
             </thead>
             <tbody>
-              {mockTickets.map((ticket: TicketType) => {
+              {tickets.map((ticket: TicketType) => {
                 const slaStatus =
                   ticket.slaPercent >= 100 ? "critical"
                   : ticket.slaPercent >= 75 ? "warning"
@@ -104,7 +158,7 @@ export default function TicketsPage() {
                   <tr
                     key={ticket.id}
                     className="border-b border-[#d9d9d9] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
-                    onClick={() => setSelectedTicket(ticket)}
+                    onClick={() => handleSelectTicket(ticket)}
                   >
                     <td className="px-4 py-3 font-mono text-xs text-[#6b7280]">
                       {ticket.id}
@@ -112,14 +166,14 @@ export default function TicketsPage() {
                     <td className="px-4 py-3 text-sm text-[#353535] max-w-[220px]">
                       <span className="block truncate">{ticket.asunto}</span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-[#6b7280]">
+                    <td className="px-4 py-3 text-sm text-[#6b7280] capitalize">
                       {ticket.canal}
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        ticket.prioridad === "Critica" ? "bg-red-500 text-white"
-                        : ticket.prioridad === "Alta" ? "bg-[#353535] text-white"
-                        : ticket.prioridad === "Media" ? "bg-[#d9d9d9] text-[#353535]"
+                        ticket.prioridad === "critica" ? "bg-red-500 text-white"
+                        : ticket.prioridad === "alta" ? "bg-[#353535] text-white"
+                        : ticket.prioridad === "media" ? "bg-[#d9d9d9] text-[#353535]"
                         : "border border-[#d9d9d9] text-[#6b7280]"
                       }`}>
                         {getPrioridadLabel(ticket.prioridad)}
@@ -127,9 +181,9 @@ export default function TicketsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        ticket.estado === "Abierto" ? "border border-[#284b63] text-[#284b63]"
-                        : ticket.estado === "Progreso" ? "bg-[#284b63] text-white"
-                        : ticket.estado === "Resuelto" ? "bg-[#3c6e71] text-white"
+                        ticket.estado === "abierto" ? "border border-[#284b63] text-[#284b63]"
+                        : ticket.estado === "progreso" ? "bg-[#284b63] text-white"
+                        : ticket.estado === "resuelto" ? "bg-[#3c6e71] text-white"
                         : "bg-[#d9d9d9] text-[#353535]"
                       }`}>
                         {getEstadoLabel(ticket.estado)}
@@ -156,7 +210,7 @@ export default function TicketsPage() {
                         className="text-[#6b7280] hover:text-[#3c6e71] transition-colors"
                         onClick={(e: React.MouseEvent) => {
                           e.stopPropagation();
-                          setSelectedTicket(ticket);
+                          handleSelectTicket(ticket);
                         }}
                       >
                         <Eye size={15} />

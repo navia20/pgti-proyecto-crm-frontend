@@ -20,7 +20,7 @@ export default function MessageThread({ ticket }: MessageThreadProps) {
             <div className="message-thread__item">
               <div
                 className={`message-thread__avatar ${
-                  message.autor_tipo === "Agente"
+                  message.autor_tipo === "agente"
                     ? "message-thread__avatar--staff"
                     : ""
                 }`}
@@ -32,10 +32,10 @@ export default function MessageThread({ ticket }: MessageThreadProps) {
                   <span className="message-thread__author">
                     {message.autor_nombre}
                   </span>
-                  {message.autor_tipo === "Agente" && (
+                  {message.autor_tipo === "agente" && (
                     <span className="message-thread__staff-badge">Staff</span>
                   )}
-                  {message.autor_tipo === "Sistema" && (
+                  {message.autor_tipo === "sistema" && (
                     <span className="message-thread__staff-badge">Sistema</span>
                   )}
                   <span className="message-thread__timestamp">

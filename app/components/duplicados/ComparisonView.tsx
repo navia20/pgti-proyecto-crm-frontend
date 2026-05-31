@@ -7,6 +7,11 @@ import { DuplicateGroup, ClienteDuplicado } from "../../lib/types/cliente.types"
 
 interface ComparisonViewProps {
   duplicate: DuplicateGroup;
+  onMerge?: (
+    principalId: number,
+    secundarioId: number,
+    campos: Record<string, unknown>
+  ) => void;
 }
 
 type FieldKey =
@@ -34,7 +39,7 @@ const fields: { key: FieldKey; label: string }[] = [
   { key: "totalSpent", label: "Total gastado" },
 ];
 
-export default function ComparisonView({ duplicate }: ComparisonViewProps) {
+export default function ComparisonView({ duplicate, onMerge }: ComparisonViewProps) {
   const [recordA, recordB] = duplicate.records;
   const [selections, setSelections] = useState<Record<string, "A" | "B">>({});
 
@@ -67,6 +72,15 @@ export default function ComparisonView({ duplicate }: ComparisonViewProps) {
         <button
           className="comparison-view__merge-btn"
           disabled={selectedCount === 0}
+          onClick={()=> {
+            if (onMerge){
+              onMerge(
+                recordA.id,
+                recordB.id,
+                selections as Record<string, unknown>
+              );
+            }
+          }}
         >
           <GitMerge size={15} />
           Fusionar Registros

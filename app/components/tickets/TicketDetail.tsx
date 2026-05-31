@@ -16,31 +16,31 @@ interface TicketDetailProps {
 }
 
 const estadoLabel: Record<string, string> = {
-  Abierto: "Abierto",
-  Progreso: "En progreso",
-  Resuelto: "Resuelto",
-  Cerrado: "Cerrado",
+  abierto: "Abierto",
+  progreso: "En progreso",
+  resuelto: "Resuelto",
+  cerrado: "Cerrado",
 };
 
 const prioridadLabel: Record<string, string> = {
-  Critica: "Crítica",
-  Alta: "Alta",
-  Media: "Media",
-  Baja: "Baja",
+  critica: "Crítica",
+  alta: "Alta",
+  media: "Media",
+  baja: "Baja",
 };
 
 const estadoClass: Record<string, string> = {
-  Abierto: "badge-status-detail--open",
-  Progreso: "badge-status-detail--in-progress",
-  Resuelto: "badge-status-detail--resolved",
-  Cerrado: "badge-status-detail--resolved",
+  abierto: "badge-status-detail--open",
+  progreso: "badge-status-detail--in-progress",
+  resuelto: "badge-status-detail--resolved",
+  cerrado: "badge-status-detail--resolved",
 };
 
 const prioridadClass: Record<string, string> = {
-  Critica: "badge-priority-detail--urgent",
-  Alta: "badge-priority-detail--high",
-  Media: "badge-priority-detail--medium",
-  Baja: "badge-priority-detail--low",
+  critica: "badge-priority-detail--urgent",
+  alta: "badge-priority-detail--high",
+  media: "badge-priority-detail--medium",
+  baja: "badge-priority-detail--low",
 };
 
 // Componente panel KB

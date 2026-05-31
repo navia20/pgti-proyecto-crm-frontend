@@ -138,3 +138,115 @@ pgti-proyecto-crm-frontend
 └─ tsconfig.json
 
 ```
+```
+pgti-proyecto-crm-frontend
+├─ AGENTS.md
+├─ app
+│  ├─ components
+│  │  ├─ clientes
+│  │  │  ├─ ActivityTimeline.css
+│  │  │  ├─ ActivityTimeline.tsx
+│  │  │  ├─ ClienteHeader.css
+│  │  │  ├─ ClienteHeader.tsx
+│  │  │  ├─ ClienteMetrics.css
+│  │  │  ├─ ClienteMetrics.tsx
+│  │  │  ├─ DealsList.css
+│  │  │  ├─ DealsList.tsx
+│  │  │  ├─ TicketsList.css
+│  │  │  └─ TicketsList.tsx
+│  │  ├─ dashboard
+│  │  │  ├─ Kpicard.css
+│  │  │  ├─ Kpicard.tsx
+│  │  │  ├─ TicketsTable.css
+│  │  │  ├─ TicketsTable.tsx
+│  │  │  ├─ WeeklyChart.css
+│  │  │  └─ WeeklyChart.tsx
+│  │  ├─ duplicados
+│  │  │  ├─ ComparisonView.css
+│  │  │  ├─ ComparisonView.tsx
+│  │  │  ├─ DuplicatesList.css
+│  │  │  └─ DuplicatesList.tsx
+│  │  ├─ layout
+│  │  │  ├─ Sidebar.css
+│  │  │  ├─ Sidebar.tsx
+│  │  │  ├─ Topbar.css
+│  │  │  └─ Topbar.tsx
+│  │  ├─ soporte
+│  │  │  ├─ AgentTable.css
+│  │  │  ├─ AgentTable.tsx
+│  │  │  ├─ MetricCard.css
+│  │  │  ├─ MetricCard.tsx
+│  │  │  ├─ PriorityChart.css
+│  │  │  ├─ PriorityChart.tsx
+│  │  │  ├─ TrendChart.css
+│  │  │  └─ TrendChart.tsx
+│  │  ├─ tickets
+│  │  │  ├─ ActivityPanel.css
+│  │  │  ├─ ActivityPanel.tsx
+│  │  │  ├─ CrearTicketModal.css
+│  │  │  ├─ CrearTicketModal.tsx
+│  │  │  ├─ MessageThread.css
+│  │  │  ├─ MessageThread.tsx
+│  │  │  ├─ TicketDetail.css
+│  │  │  └─ TicketDetail.tsx
+│  │  └─ ui
+│  │     ├─ avatar.tsx
+│  │     ├─ badge.tsx
+│  │     ├─ button.tsx
+│  │     ├─ card.tsx
+│  │     ├─ dropdown-menu.tsx
+│  │     ├─ EmptyState.css
+│  │     ├─ EmptyState.tsx
+│  │     ├─ input.tsx
+│  │     ├─ scroll-area.tsx
+│  │     ├─ select.tsx
+│  │     ├─ separator.tsx
+│  │     ├─ Skeleton.css
+│  │     ├─ Skeleton.tsx
+│  │     ├─ table.tsx
+│  │     ├─ tabs.tsx
+│  │     └─ textarea.tsx
+│  ├─ favicon.ico
+│  ├─ globals.css
+│  ├─ layout.tsx
+│  ├─ lib
+│  │  ├─ mocks
+│  │  │  ├─ clientes.mock.ts
+│  │  │  ├─ soporte.mock.ts
+│  │  │  └─ tickets.mock.ts
+│  │  ├─ types
+│  │  │  ├─ cliente.types.ts
+│  │  │  └─ ticket.types.ts
+│  │  └─ utils.ts
+│  ├─ page.tsx
+│  └─ pages
+│     ├─ clientes
+│     │  └─ page.tsx
+│     ├─ dashboard
+│     │  └─ page.tsx
+│     ├─ duplicados
+│     │  └─ page.tsx
+│     ├─ layout.tsx
+│     ├─ soporte
+│     │  └─ page.tsx
+│     └─ tickets
+│        └─ page.tsx
+├─ CLAUDE.md
+├─ components.json
+├─ docker-compose.yml
+├─ Dockerfile
+├─ eslint.config.mjs
+├─ next.config.ts
+├─ package-lock.json
+├─ package.json
+├─ postcss.config.mjs
+├─ public
+│  ├─ file.svg
+│  ├─ globe.svg
+│  ├─ next.svg
+│  ├─ vercel.svg
+│  └─ window.svg
+├─ README.md
+└─ tsconfig.json
+
+```
