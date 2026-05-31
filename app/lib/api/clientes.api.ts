@@ -44,7 +44,7 @@ export const clientesApi = {
     return mapCliente(data);
   },
 
-  getDuplicados: async (threshold = 80) => {
+  getDuplicados: async (threshold = 50) => {
     const url = `${API_ROUTES.clientesDuplicados}?threshold=${threshold}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error("Error al obtener duplicados");

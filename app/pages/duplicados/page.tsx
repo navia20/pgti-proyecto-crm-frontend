@@ -71,7 +71,7 @@ export default function DuplicadosPage() {
       });
       // Recargar duplicados después del merge
       setSelected(null);
-      const data = await clientesApi.getDuplicados(80);
+      const data = await clientesApi.getDuplicados(50);
       setDuplicados(Array.isArray(data) ? data : []);
     } catch {
       console.error("Error al fusionar clientes");

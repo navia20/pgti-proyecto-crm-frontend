@@ -6,7 +6,7 @@ import {
   Circle, AlertCircle, User,
   Clock, Tag, BookOpen, Link,
 } from "lucide-react";
-import { TicketDetalle, TicketActivity, ArticuloKB } from "../../lib/types/ticket.types";
+import { TicketDetalle, TicketActivity, ArticuloKB, Interaccion } from "../../lib/types/ticket.types";
 import { mockArticulosKB } from "../../lib/mocks/tickets.mock";
 import MessageThread from "./MessageThread";
 import ActivityPanel from "./ActivityPanel";
@@ -148,6 +148,12 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
 }
 
 export default function TicketDetail({ ticket }: TicketDetailProps) {
+  // Agrega este estado dentro del componente TicketDetail
+const [interacciones, setInteracciones] = useState(ticket.interacciones);
+
+const handleInteraccionCreada = (nueva: Interaccion) => {
+  setInteracciones((prev) => [...prev, nueva]);
+};
   const activityItems: TicketActivity[] = [
     {
       id: 1,
@@ -267,7 +273,8 @@ export default function TicketDetail({ ticket }: TicketDetailProps) {
 
       {/* Panel central — Mensajes */}
       <main className="ticket-detail__main">
-        <MessageThread ticket={ticket} />
+        <MessageThread ticket={{...ticket, interacciones}}
+        onInteraccionCreada={handleInteraccionCreada} />
       </main>
 
       {/* Panel derecho — KB + Referencias + Actividad */}
