@@ -51,17 +51,17 @@ export const clientesApi = {
     return res.json();
   },
 
-  merge: async (payload: {
-    cliente_principal_id: number;
-    cliente_secundario_id: number;
-    campos_a_conservar: Record<string, unknown>;
-  }) => {
-    const res = await fetch(API_ROUTES.clientesMerge, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    if (!res.ok) throw new Error("Error al fusionar clientes");
-    return res.json();
-  },
+merge: async (payload: {
+  cliente_principal_id: number;
+  cliente_secundario_id: number;
+  campos_a_conservar: string[];
+}) => {
+  const res = await fetch(API_ROUTES.clientesMerge, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Error al fusionar clientes");
+  return res.json();
+},
 };

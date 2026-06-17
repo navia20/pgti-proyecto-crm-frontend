@@ -58,25 +58,32 @@ export default function DuplicadosPage() {
     fetchDuplicados();
   }, []);
 
-  const handleMerge = async (
-    principalId: number,
-    secundarioId: number,
-    campos: Record<string, unknown>
-  ) => {
-    try {
-      await clientesApi.merge({
-        cliente_principal_id: principalId,
-        cliente_secundario_id: secundarioId,
-        campos_a_conservar: campos,
-      });
-      // Recargar duplicados después del merge
-      setSelected(null);
-      const data = await clientesApi.getDuplicados(50);
-      setDuplicados(Array.isArray(data) ? data : []);
-    } catch {
-      console.error("Error al fusionar clientes");
-    }
-  };
+const handleMerge = async (
+  principalId: number,
+  secundarioId: number,
+  campos: Record<string, unknown>
+) => {
+  try {
+    // Convertir el objeto de selecciones a array de campos del secundario
+    // campos = { nombre_completo: "A", email: "B", ... }
+    // El backend espera los campos donde se eligió "B" (el secundario)
+    const camposSecundario = Object.entries(campos)
+      .filter(([_, valor]) => valor === "B")
+      .map(([campo]) => campo);
+
+    await clientesApi.merge({
+      cliente_principal_id: principalId,
+      cliente_secundario_id: secundarioId,
+      campos_a_conservar: camposSecundario,
+    });
+
+    setSelected(null);
+    const data = await clientesApi.getDuplicados(50);
+    setDuplicados(Array.isArray(data) ? data : []);
+  } catch {
+    console.error("Error al fusionar clientes");
+  }
+};
 
   return (
     <div className="flex flex-col h-[calc(100vh-64px)]">
