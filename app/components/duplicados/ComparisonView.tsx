@@ -1,55 +1,67 @@
 "use client";
 
 import "./ComparisonView.css";
-import { useState } from "react";
+import React, { useState } from "react";
 import { GitMerge } from "lucide-react";
-import { DuplicateGroup } from "../../lib/types/cliente.types";
+import { DuplicateGroup, ClienteDuplicado } from "../../lib/types/cliente.types";
 
 interface ComparisonViewProps {
   duplicate: DuplicateGroup;
+  onMerge?: (
+    principalId: number,
+    secundarioId: number,
+    campos: Record<string, unknown>
+  ) => void;
 }
 
 type FieldKey =
-  | "name"
+  | "nombre_completo"
   | "email"
-  | "phone"
+  | "telefono"
   | "company"
   | "address"
   | "city"
   | "country"
-  | "createdAt"
+  | "creado_en"
   | "lastPurchase"
   | "totalSpent";
 
 const fields: { key: FieldKey; label: string }[] = [
-  { key: "name", label: "Nombre" },
+  { key: "nombre_completo", label: "Nombre" },
   { key: "email", label: "Email" },
-  { key: "phone", label: "Teléfono" },
+  { key: "telefono", label: "Teléfono" },
   { key: "company", label: "Empresa" },
   { key: "address", label: "Dirección" },
   { key: "city", label: "Ciudad" },
   { key: "country", label: "País" },
-  { key: "createdAt", label: "Creado" },
+  { key: "creado_en", label: "Creado" },
   { key: "lastPurchase", label: "Última compra" },
   { key: "totalSpent", label: "Total gastado" },
 ];
 
-export default function ComparisonView({ duplicate }: ComparisonViewProps) {
+export default function ComparisonView({ duplicate, onMerge }: ComparisonViewProps) {
   const [recordA, recordB] = duplicate.records;
   const [selections, setSelections] = useState<Record<string, "A" | "B">>({});
 
   const selectedCount = Object.keys(selections).length;
 
   const handleSelect = (field: string, record: "A" | "B") => {
-    setSelections((prev) => ({ ...prev, [field]: record }));
+    setSelections((prev: Record<string, "A" | "B">) => ({ ...prev, [field]: record }));
   };
 
-  const isEqual = (field: FieldKey): boolean =>
-    recordA[field] === recordB[field];
+  const isEqual = (field: FieldKey): boolean => {
+    const valA = recordA[field as keyof ClienteDuplicado];
+    const valB = recordB[field as keyof ClienteDuplicado];
+    return valA === valB;
+  };
+
+  const getValue = (record: ClienteDuplicado, field: FieldKey): string => {
+    const val = record[field as keyof ClienteDuplicado];
+    return val !== undefined && val !== null ? String(val) : "—";
+  };
 
   return (
     <div className="comparison-view">
-      {/* Header */}
       <div className="comparison-view__header">
         <div>
           <div className="comparison-view__title">Comparación de Registros</div>
@@ -60,55 +72,54 @@ export default function ComparisonView({ duplicate }: ComparisonViewProps) {
         <button
           className="comparison-view__merge-btn"
           disabled={selectedCount === 0}
+          onClick={()=> {
+            if (onMerge){
+              onMerge(
+                recordA.id,
+                recordB.id,
+                selections as Record<string, unknown>
+              );
+            }
+          }}
         >
           <GitMerge size={15} />
           Fusionar Registros
         </button>
       </div>
 
-      {/* Tabla comparativa */}
       <div className="comparison-view__table">
         <table>
           <tbody>
-            {/* Cabecera de columnas */}
             <tr className="comparison-view__col-header">
               <td className="comparison-view__field-label" />
               <td className="comparison-view__field-value">
                 <div className="comparison-view__col-label">Registro A</div>
                 <div className="comparison-view__col-id">{recordA.id}</div>
                 <div className="comparison-view__col-selected">
-                  Seleccionados:{" "}
-                  {Object.values(selections).filter((v) => v === "A").length}
+                  Seleccionados: {Object.values(selections).filter((v) => v === "A").length}
                 </div>
               </td>
               <td className="comparison-view__field-value">
                 <div className="comparison-view__col-label">Registro B</div>
                 <div className="comparison-view__col-id">{recordB.id}</div>
                 <div className="comparison-view__col-selected">
-                  Seleccionados:{" "}
-                  {Object.values(selections).filter((v) => v === "B").length}
+                  Seleccionados: {Object.values(selections).filter((v) => v === "B").length}
                 </div>
               </td>
             </tr>
 
-            {/* Filas de campos */}
             {fields.map(({ key, label }) => {
               const equal = isEqual(key);
               const selectedA = selections[key] === "A";
               const selectedB = selections[key] === "B";
-              const valueA = String(recordA[key]);
-              const valueB = String(recordB[key]);
+              const valueA = getValue(recordA, key);
+              const valueB = getValue(recordB, key);
 
               return (
                 <tr key={key} className="comparison-view__field-row">
                   <td className="comparison-view__field-label">{label}</td>
 
-                  {/* Valor A */}
-                  <td
-                    className={`comparison-view__field-value ${
-                      selectedA ? "comparison-view__field-value--selected" : ""
-                    }`}
-                  >
+                  <td className={`comparison-view__field-value ${selectedA ? "comparison-view__field-value--selected" : ""}`}>
                     {equal ? (
                       <span className="comparison-view__equal">{valueA}</span>
                     ) : (
@@ -126,12 +137,7 @@ export default function ComparisonView({ duplicate }: ComparisonViewProps) {
                     )}
                   </td>
 
-                  {/* Valor B */}
-                  <td
-                    className={`comparison-view__field-value ${
-                      selectedB ? "comparison-view__field-value--selected" : ""
-                    }`}
-                  >
+                  <td className={`comparison-view__field-value ${selectedB ? "comparison-view__field-value--selected" : ""}`}>
                     {equal ? (
                       <span className="comparison-view__equal">{valueB}</span>
                     ) : (

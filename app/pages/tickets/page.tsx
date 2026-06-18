@@ -1,38 +1,82 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, Eye } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ArrowLeft, Eye, Ticket } from "lucide-react";
 import TicketDetail from "../../components/tickets/TicketDetail";
-import { mockTickets, mockTicketDetail } from "../../lib/mocks/tickets.mock";
-import { Ticket } from "../../lib/types/ticket.types";
+import EmptyState from "../../components/ui/EmptyState";
+import { SkeletonTable } from "../../components/ui/Skeleton";
+import { mockTickets, mockTicketDetalle } from "../../lib/mocks/tickets.mock";
+import { ticketsApi } from "../../lib/api/tickets.api";
+import { interaccionesApi } from "../../lib/api/interacciones.api";
+import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
 
-function getPriorityLabel(priority: string) {
+function getPrioridadLabel(prioridad: string) {
   const map: Record<string, string> = {
-    urgent: "Urgente", high: "Alta", medium: "Media", low: "Baja",
+    critica: "Crítica", alta: "Alta", media: "Media", baja: "Baja",
   };
-  return map[priority] ?? priority;
+  return map[prioridad] ?? prioridad;
 }
 
-function getStatusLabel(status: string) {
+function getEstadoLabel(estado: string) {
   const map: Record<string, string> = {
-    open: "Abierto", "in-progress": "En progreso", resolved: "Resuelto",
+    abierto: "Abierto",
+    progreso: "En progreso",
+    resuelto: "Resuelto",
+    cerrado: "Cerrado",
   };
-  return map[status] ?? status;
+  return map[estado] ?? estado;
 }
 
 export default function TicketsPage() {
-  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  const [tickets, setTickets] = useState<TicketType[]>(mockTickets);
+  const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
+  const [ticketDetalle, setTicketDetalle] = useState<TicketDetalle | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setIsLoading(true);
+        const data = await ticketsApi.getAll({ take: 50 });
+        setTickets(data.length > 0 ? data : mockTickets);
+      } catch {
+        setTickets(mockTickets);
+        setError("Usando datos locales — backend no disponible");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTickets();
+  }, []);
+
+  const handleSelectTicket = async (ticket: TicketType) => {
+    setSelectedTicket(ticket);
+    setIsLoadingDetalle(true);
+    try {
+      const [detalle, interacciones] = await Promise.all([
+        ticketsApi.getById(ticket.id),
+        interaccionesApi.getByTicket(ticket.id),
+      ]);
+      setTicketDetalle({ ...detalle, interacciones });
+    } catch {
+      // fallback a mock detalle
+      setTicketDetalle(mockTicketDetalle);
+    } finally {
+      setIsLoadingDetalle(false);
+    }
+  };
 
   if (selectedTicket) {
     return (
       <div className="flex flex-col h-[calc(100vh-64px)]">
-        {/* Header detalle */}
         <div
           className="flex items-center gap-4 px-6 py-3 border-b border-[#d9d9d9] bg-white"
           style={{ minHeight: "52px" }}
         >
           <button
-            onClick={() => setSelectedTicket(null)}
+            onClick={() => { setSelectedTicket(null); setTicketDetalle(null); }}
             className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#353535] transition-colors"
           >
             <ArrowLeft size={16} />
@@ -40,149 +84,145 @@ export default function TicketsPage() {
           </button>
           <span className="text-[#d9d9d9]">|</span>
           <span className="text-sm font-mono text-[#6b7280]">
-            {mockTicketDetail.id}
+            {selectedTicket.id}
           </span>
           <span className="text-sm text-[#353535] font-medium">
-            {mockTicketDetail.title}
+            {selectedTicket.asunto}
           </span>
         </div>
 
-        {/* Detalle */}
-        <TicketDetail ticket={mockTicketDetail} />
+        {isLoadingDetalle ? (
+          <div className="flex-1 flex items-center justify-center text-sm text-[#6b7280]">
+            Cargando detalle del ticket...
+          </div>
+        ) : (
+          <TicketDetail ticket={ticketDetalle ?? mockTicketDetalle} />
+        )}
       </div>
     );
   }
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-[#353535] tracking-tight mb-1">
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {mockTickets.length} tickets en total
+            {tickets.length} tickets en total
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-[#3c6e71] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#2d5557] transition-colors">
-          + Crear Ticket
-        </button>
       </div>
 
-      {/* Tabla */}
-      <div className="border border-[#d9d9d9] rounded-xl overflow-hidden">
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-[#284b63]">
-              {["ID", "Título", "Prioridad", "Estado", "Agente", "Categoría", "SLA", ""].map(
-                (h) => (
-                  <th
-                    key={h}
-                    className="text-left text-white text-xs font-medium px-4 py-3 tracking-wide"
-                  >
+      {error && (
+        <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          ⚠️ {error}
+        </div>
+      )}
+
+      {isLoading ? (
+        <SkeletonTable rows={8} />
+      ) : tickets.length === 0 ? (
+        <div className="border border-[#d9d9d9] rounded-xl">
+          <EmptyState
+            icon={Ticket}
+            title="No hay tickets"
+            description="Aún no se han creado tickets. Usa el botón 'Crear Ticket' para abrir el primero."
+          />
+        </div>
+      ) : (
+        <div className="border border-[#d9d9d9] rounded-xl overflow-hidden">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-[#284b63]">
+                {["ID", "Asunto", "Canal", "Prioridad", "Estado", "Agente", "Cliente", "SLA", ""].map((h) => (
+                  <th key={h} className="text-left text-white text-xs font-medium px-4 py-3 tracking-wide">
                     {h}
                   </th>
-                )
-              )}
-            </tr>
-          </thead>
-          <tbody>
-            {mockTickets.map((ticket: Ticket) => {
-              const slaStatus =
-                ticket.slaPercent >= 100
-                  ? "critical"
-                  : ticket.slaPercent >= 75
-                  ? "warning"
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {tickets.map((ticket: TicketType) => {
+                const slaStatus =
+                  ticket.slaPercent >= 100 ? "critical"
+                  : ticket.slaPercent >= 75 ? "warning"
                   : "ok";
-              const slaColor =
-                slaStatus === "critical"
-                  ? "#ef4444"
-                  : slaStatus === "warning"
-                  ? "#eab308"
+                const slaColor =
+                  slaStatus === "critical" ? "#ef4444"
+                  : slaStatus === "warning" ? "#eab308"
                   : "#22c55e";
 
-              return (
-                <tr
-                  key={ticket.id}
-                  className="border-b border-[#d9d9d9] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
-                  onClick={() => setSelectedTicket(ticket)}
-                >
-                  <td className="px-4 py-3 font-mono text-xs text-[#6b7280]">
-                    {ticket.id}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[#353535] max-w-[260px]">
-                    <span className="block truncate">{ticket.title}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        ticket.priority === "urgent"
-                          ? "bg-red-500 text-white"
-                          : ticket.priority === "high"
-                          ? "bg-[#353535] text-white"
-                          : ticket.priority === "medium"
-                          ? "bg-[#d9d9d9] text-[#353535]"
-                          : "border border-[#d9d9d9] text-[#6b7280]"
-                      }`}
-                    >
-                      {getPriorityLabel(ticket.priority)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        ticket.status === "open"
-                          ? "border border-[#284b63] text-[#284b63]"
-                          : ticket.status === "in-progress"
-                          ? "bg-[#284b63] text-white"
-                          : "bg-[#3c6e71] text-white"
-                      }`}
-                    >
-                      {getStatusLabel(ticket.status)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[#6b7280]">
-                    {ticket.agent}
-                  </td>
-                  <td className="px-4 py-3 text-sm text-[#6b7280]">
-                    {ticket.category}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <div
-                        className="w-2 h-2 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: slaColor }}
-                      />
-                      <span
-                        className="text-xs font-medium"
-                        style={{ color: slaColor }}
-                      >
-                        {ticket.slaPercent >= 100
-                          ? `${ticket.slaPercent}% — Vencido`
-                          : ticket.slaPercent >= 75
-                          ? `${ticket.slaPercent}% — En riesgo`
-                          : `${ticket.slaPercent}%`}
+                return (
+                  <tr
+                    key={ticket.id}
+                    className="border-b border-[#d9d9d9] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
+                    onClick={() => handleSelectTicket(ticket)}
+                  >
+                    <td className="px-4 py-3 font-mono text-xs text-[#6b7280]">
+                      {ticket.id}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#353535] max-w-[220px]">
+                      <span className="block truncate">{ticket.asunto}</span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#6b7280] capitalize">
+                      {ticket.canal}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        ticket.prioridad === "critica" ? "bg-red-500 text-white"
+                        : ticket.prioridad === "alta" ? "bg-[#353535] text-white"
+                        : ticket.prioridad === "media" ? "bg-[#d9d9d9] text-[#353535]"
+                        : "border border-[#d9d9d9] text-[#6b7280]"
+                      }`}>
+                        {getPrioridadLabel(ticket.prioridad)}
                       </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <button
-                      className="text-[#6b7280] hover:text-[#3c6e71] transition-colors"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedTicket(ticket);
-                      }}
-                    >
-                      <Eye size={15} />
-                    </button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        ticket.estado === "abierto" ? "border border-[#284b63] text-[#284b63]"
+                        : ticket.estado === "progreso" ? "bg-[#284b63] text-white"
+                        : ticket.estado === "resuelto" ? "bg-[#3c6e71] text-white"
+                        : "bg-[#d9d9d9] text-[#353535]"
+                      }`}>
+                        {getEstadoLabel(ticket.estado)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#6b7280]">
+                      {ticket.agente_nombre}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-[#6b7280]">
+                      {ticket.cliente_nombre}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: slaColor }} />
+                        <span className="text-xs font-medium" style={{ color: slaColor }}>
+                          {ticket.slaPercent >= 100 ? `${ticket.slaPercent}% — Vencido`
+                          : ticket.slaPercent >= 75 ? `${ticket.slaPercent}% — En riesgo`
+                          : `${ticket.slaPercent}%`}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        className="text-[#6b7280] hover:text-[#3c6e71] transition-colors"
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          handleSelectTicket(ticket);
+                        }}
+                      >
+                        <Eye size={15} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

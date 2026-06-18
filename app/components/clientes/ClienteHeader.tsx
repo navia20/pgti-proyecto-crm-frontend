@@ -1,39 +1,67 @@
 import "./ClienteHeader.css";
-import { Building2, MapPin, Calendar, Mail, Phone, MessageSquare, MoreHorizontal } from "lucide-react";
-import { ClientePerfil } from "../../lib/types/cliente.types";
+import React from "react";
+import {
+  Building2, MapPin, Calendar,
+  Mail, Phone, MessageSquare, MoreHorizontal,
+} from "lucide-react";
+import { ClientePerfil, ClienteSalud } from "../../lib/types/cliente.types";
 
 interface ClienteHeaderProps {
   cliente: ClientePerfil;
+  salud?: ClienteSalud;
 }
 
-export default function ClienteHeader({ cliente }: ClienteHeaderProps) {
+const saludLabel: Record<string, string> = {
+  verde: "Salud: Buena",
+  amarillo: "Salud: En riesgo",
+  rojo: "Salud: Crítica",
+};
+
+export default function ClienteHeader({ cliente, salud }: ClienteHeaderProps) {
+  const nombre = cliente.nombre_completo;
+  const empresa = cliente.empresa ?? cliente.company ?? "—";
+  const ubicacion = cliente.ubicacion ?? cliente.location ?? "—";
+  const desde = cliente.customerSince ??
+    new Date(cliente.creado_en).toLocaleDateString("es-ES", {
+      month: "long", year: "numeric",
+    });
+  const telefono = cliente.telefono ?? cliente.phone ?? "—";
+  const estadoCliente = cliente.estado ?? cliente.status ?? "inactive";
+
   return (
     <div className="cliente-header">
       <div className="cliente-header__top">
         {/* Identidad */}
         <div className="cliente-header__identity">
           <div className="cliente-header__avatar">
-            {cliente.name.charAt(0)}
+            {nombre.charAt(0)}
           </div>
           <div className="cliente-header__info">
             <div className="cliente-header__name">
-              {cliente.name}
-              <span className={`cliente-header__status cliente-header__status--${cliente.status}`}>
-                {cliente.status === "active" ? "active" : "inactive"}
+              {nombre}
+              <span className={`cliente-header__status cliente-header__status--${estadoCliente}`}>
+                {estadoCliente === "active" ? "active" : "inactive"}
               </span>
+              {/* Indicador de salud */}
+              {salud && (
+                <span className={`cliente-header__salud cliente-header__salud--${salud.nivel}`}>
+                  <span className={`cliente-header__salud-dot cliente-header__salud-dot--${salud.nivel}`} />
+                  {saludLabel[salud.nivel]}
+                </span>
+              )}
             </div>
             <div className="cliente-header__meta">
               <span className="cliente-header__meta-item">
                 <Building2 size={13} />
-                {cliente.company}
+                {empresa}
               </span>
               <span className="cliente-header__meta-item">
                 <MapPin size={13} />
-                {cliente.location}
+                {ubicacion}
               </span>
               <span className="cliente-header__meta-item">
                 <Calendar size={13} />
-                Cliente desde {cliente.customerSince}
+                Cliente desde {desde}
               </span>
             </div>
           </div>
@@ -67,7 +95,7 @@ export default function ClienteHeader({ cliente }: ClienteHeaderProps) {
         </div>
         <div className="cliente-header__contact-item">
           <span className="cliente-header__contact-label">Teléfono</span>
-          {cliente.phone}
+          {telefono}
         </div>
       </div>
     </div>

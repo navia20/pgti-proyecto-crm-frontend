@@ -128,3 +128,40 @@
 .cliente-header__contact-label {
   color: #6b7280;
 }
+
+/* Indicador de salud */
+.cliente-header__salud {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.875rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.cliente-header__salud--verde {
+  background-color: #dcfce7;
+  color: #16a34a;
+}
+
+.cliente-header__salud--amarillo {
+  background-color: #fef9c3;
+  color: #ca8a04;
+}
+
+.cliente-header__salud--rojo {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
+.cliente-header__salud-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.cliente-header__salud-dot--verde { background-color: #16a34a; }
+.cliente-header__salud-dot--amarillo { background-color: #ca8a04; }
+.cliente-header__salud-dot--rojo { background-color: #dc2626; }
