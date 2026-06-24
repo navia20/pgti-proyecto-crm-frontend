@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from "react";
 import { Filter, Search, User, LayoutGrid, Ticket } from "lucide-react";
+import { useRouter } from "next/navigation";
 import KpiCard from "../../components/dashboard/Kpicard";
 import TicketsTable from "../../components/dashboard/TicketsTable";
-import WeeklyChart from "../../components/dashboard/WeeklyChart";
 import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonKpiGrid, SkeletonTable } from "../../components/ui/Skeleton";
-import { mockTickets, mockWeeklyChart } from "../../lib/mocks/tickets.mock";
+import { mockTickets } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
+import { reportesApi, MetricasTickets } from "../../lib/api/reportes.api";
 import { Ticket as TicketType } from "../../lib/types/ticket.types";
 
 const AGENTE_ACTUAL = "agt-001";
@@ -26,21 +27,26 @@ const filterOptions = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [filter, setFilter] = useState("all");
   const [vistaPropia, setVistaPropia] = useState(false);
   const [tickets, setTickets] = useState<TicketType[]>(mockTickets);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [metricasTickets, setMetricasTickets] = useState<MetricasTickets | null>(null);
 
   useEffect(() => {
-    const fetchTickets = async () => {
+    const fetchData = async () => {
       try {
         setIsLoading(true);
         setError(null);
-        const data = await ticketsApi.getAll({ take: 50 });
-        setTickets(data.length > 0 ? data : mockTickets);
+        const [ticketsData, metricas] = await Promise.all([
+          ticketsApi.getAll({ take: 50 }),
+          reportesApi.getMetricasTickets(),
+        ]);
+        setTickets(ticketsData.length > 0 ? ticketsData : mockTickets);
+        setMetricasTickets(metricas);
       } catch {
-        // fallback a mocks si el backend no responde
         setTickets(mockTickets);
         setError("Usando datos locales — backend no disponible");
       } finally {
@@ -48,17 +54,28 @@ export default function DashboardPage() {
       }
     };
 
-    fetchTickets();
+    fetchData();
   }, []);
 
   const ticketsFiltradosPorVista = vistaPropia
     ? tickets.filter((t: TicketType) => t.agente_id === AGENTE_ACTUAL)
     : tickets;
 
-  const openTickets = ticketsFiltradosPorVista.filter((t) => t.estado === "abierto").length;
+  // KPIs — prioriza datos del backend, fallback a cálculo local
+  const openTickets = metricasTickets?.abiertos
+    ?? ticketsFiltradosPorVista.filter((t) => t.estado === "abierto").length;
   const urgentTickets = ticketsFiltradosPorVista.filter((t) => t.prioridad === "critica").length;
-  const inProgressTickets = ticketsFiltradosPorVista.filter((t) => t.estado === "progreso").length;
-  const resolvedToday = ticketsFiltradosPorVista.filter((t) => t.estado === "resuelto").length;
+  const inProgressTickets = metricasTickets?.en_progreso
+    ?? ticketsFiltradosPorVista.filter((t) => t.estado === "progreso").length;
+  const resolvedToday = metricasTickets?.resueltos
+    ?? ticketsFiltradosPorVista.filter((t) => t.estado === "resuelto").length;
+
+  const handleTicketClick = (ticket: TicketType) => {
+    // Guardar el ticket seleccionado en sessionStorage para que la página de tickets lo cargue
+    sessionStorage.setItem("selectedTicketId", ticket.id);
+    router.push("/pages/tickets");
+  };
+
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
       {/* Header */}
@@ -163,10 +180,14 @@ export default function DashboardPage() {
               />
             </div>
           ) : (
-            <TicketsTable tickets={ticketsFiltradosPorVista} filter={filter} />
+            <TicketsTable
+              tickets={ticketsFiltradosPorVista}
+              filter={filter}
+              onTicketClick={handleTicketClick}
+            />
           )}
 
-          <WeeklyChart data={mockWeeklyChart} />
+          {/* <WeeklyChart data={mockWeeklyChart} /> */}
         </>
       )}
     </div>

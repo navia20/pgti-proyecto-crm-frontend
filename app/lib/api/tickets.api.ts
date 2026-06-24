@@ -1,17 +1,15 @@
 import { API_ROUTES } from "./config";
 import { Ticket, TicketDetalle, CrearTicketForm } from "../types/ticket.types";
 
-// Calcular SLA percent desde fecha de vencimiento
 function calcularSlaPercent(fechaVencimiento: string): number {
   const ahora = new Date().getTime();
   const vencimiento = new Date(fechaVencimiento).getTime();
-  const creacion = vencimiento - 24 * 60 * 60 * 1000; // asume 24h de SLA base
+  const creacion = vencimiento - 24 * 60 * 60 * 1000;
   const total = vencimiento - creacion;
   const transcurrido = ahora - creacion;
   return Math.round((transcurrido / total) * 100);
 }
 
-// Mapear respuesta del backend al tipo Ticket del frontend
 function mapTicket(data: Record<string, unknown>): Ticket {
   return {
     id: data.id as string,
@@ -25,7 +23,8 @@ function mapTicket(data: Record<string, unknown>): Ticket {
     pedido_id_ref: (data.pedido_id_ref as string) ?? null,
     suscripcion_id_ref: (data.suscripcion_id_ref as string) ?? null,
     slaPercent: calcularSlaPercent(data.fecha_vencimiento_sla as string),
-    agente_nombre: (data.agente_id as string) ? "Agente asignado" : "Sin asignar",
+    // Sin módulo de usuarios, todos los tickets son gestionados por el sistema
+    agente_nombre: "Administrador del Sistema",
     cliente_nombre: (data.cliente_nombre as string) ?? `Cliente ${data.cliente_id}`,
   };
 }
@@ -48,7 +47,6 @@ export const ticketsApi = {
     const res = await fetch(url.toString());
     if (!res.ok) throw new Error("Error al obtener tickets");
     const json = await res.json();
-    // El backend devuelve { data: [], total: number }
     const lista = Array.isArray(json) ? json : json.data ?? [];
     return lista.map(mapTicket);
   },

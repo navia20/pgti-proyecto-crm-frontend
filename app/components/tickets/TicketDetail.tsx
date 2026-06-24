@@ -4,15 +4,17 @@ import "./TicketDetail.css";
 import React, { useState } from "react";
 import {
   Circle, AlertCircle, User,
-  Clock, Tag, BookOpen, Link,
+  Clock, Tag, BookOpen, Link, ChevronDown,
 } from "lucide-react";
-import { TicketDetalle, TicketActivity, ArticuloKB, Interaccion } from "../../lib/types/ticket.types";
+import { TicketDetalle, TicketActivity, ArticuloKB, Interaccion, TicketEstado } from "../../lib/types/ticket.types";
 import { mockArticulosKB } from "../../lib/mocks/tickets.mock";
+import { ticketsApi } from "../../lib/api/tickets.api";
 import MessageThread from "./MessageThread";
 import ActivityPanel from "./ActivityPanel";
 
 interface TicketDetailProps {
   ticket: TicketDetalle;
+  esAdmin?: boolean;
 }
 
 const estadoLabel: Record<string, string> = {
@@ -42,6 +44,10 @@ const prioridadClass: Record<string, string> = {
   media: "badge-priority-detail--medium",
   baja: "badge-priority-detail--low",
 };
+
+// Estados disponibles según rol
+const estadosAgente: TicketEstado[] = ["abierto", "progreso", "resuelto"];
+const estadosAdmin: TicketEstado[] = ["abierto", "progreso", "resuelto", "cerrado"];
 
 // Componente panel KB
 function PanelKB({ ticket }: { ticket: TicketDetalle }) {
@@ -88,9 +94,7 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
                       Adjuntar
                     </button>
                   ) : (
-                    <span className="ticket-kb__badge">
-                      ✓ Adjuntado
-                    </span>
+                    <span className="ticket-kb__badge">✓ Adjuntado</span>
                   )}
                 </div>
               </div>
@@ -114,11 +118,7 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
                 {ticket.pedido_id_ref}
               </span>
             ) : (
-              <input
-                type="text"
-                placeholder="ped-123"
-                className="ticket-enlaces__input"
-              />
+              <input type="text" placeholder="ped-123" className="ticket-enlaces__input" />
             )}
           </div>
           <div className="ticket-enlaces__row">
@@ -129,17 +129,11 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
                 {ticket.suscripcion_id_ref}
               </span>
             ) : (
-              <input
-                type="text"
-                placeholder="sus-456"
-                className="ticket-enlaces__input"
-              />
+              <input type="text" placeholder="sus-456" className="ticket-enlaces__input" />
             )}
           </div>
           {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && (
-            <button className="ticket-enlaces__save-btn">
-              Guardar referencias
-            </button>
+            <button className="ticket-enlaces__save-btn">Guardar referencias</button>
           )}
         </div>
       </div>
@@ -147,13 +141,43 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
   );
 }
 
-export default function TicketDetail({ ticket }: TicketDetailProps) {
-  // Agrega este estado dentro del componente TicketDetail
-const [interacciones, setInteracciones] = useState(ticket.interacciones);
+export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailProps) {
+  const [interacciones, setInteracciones] = useState(ticket.interacciones);
+  const [estadoActual, setEstadoActual] = useState<TicketEstado>(ticket.estado);
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
 
-const handleInteraccionCreada = (nueva: Interaccion) => {
-  setInteracciones((prev) => [...prev, nueva]);
-};
+  const handleInteraccionCreada = (nueva: Interaccion) => {
+    setInteracciones((prev) => [...prev, nueva]);
+  };
+
+  const handleCambiarEstado = async (nuevoEstado: TicketEstado) => {
+    if (nuevoEstado === estadoActual) return;
+    try {
+      setCambiandoEstado(true);
+      await ticketsApi.actualizar(ticket.id, { estado: nuevoEstado });
+      setEstadoActual(nuevoEstado);
+      // Agregar nota de sistema en actividad
+      const nuevaInteraccion: Interaccion = {
+        id: `sys-${Date.now()}`,
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Estado cambiado a "${estadoLabel[nuevoEstado]}"`,
+        es_nota_interna: true,
+        creado_en: new Date().toISOString(),
+        autor_nombre: "Sistema",
+        autor_iniciales: "SI",
+      };
+      setInteracciones((prev) => [...prev, nuevaInteraccion]);
+    } catch (error) {
+      console.error("Error al cambiar estado:", error);
+    } finally {
+      setCambiandoEstado(false);
+    }
+  };
+
+  const estadosDisponibles = esAdmin ? estadosAdmin : estadosAgente;
+
   const activityItems: TicketActivity[] = [
     {
       id: 1,
@@ -161,23 +185,110 @@ const handleInteraccionCreada = (nueva: Interaccion) => {
       user: "Sistema",
       timestamp: ticket.interacciones[0]?.creado_en ?? "",
       from: "nuevo",
-      to: ticket.estado,
+      to: estadoActual,
     },
   ];
 
+  const ticketCerrado = estadoActual === "cerrado";
+
   return (
     <div className="ticket-detail">
+      {/* Banner ticket cerrado */}
+      {ticketCerrado && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0, left: 0, right: 0,
+            backgroundColor: "#f3f4f6",
+            borderBottom: "1px solid #d9d9d9",
+            padding: "0.5rem 1.5rem",
+            fontSize: "0.8rem",
+            color: "#6b7280",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+          }}
+        >
+          🔒 Este ticket está cerrado.
+          {esAdmin && (
+            <button
+              onClick={() => handleCambiarEstado("abierto")}
+              style={{
+                marginLeft: "0.5rem",
+                color: "#3c6e71",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                fontSize: "0.8rem",
+                fontWeight: 500,
+                textDecoration: "underline",
+              }}
+            >
+              Reabrir ticket
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Panel izquierdo — Metadatos */}
-      <aside className="ticket-detail__sidebar">
-        {/* Estado */}
+      <aside className="ticket-detail__sidebar" style={ticketCerrado ? { paddingTop: "2.5rem" } : {}}>
+
+        {/* Estado con selector */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Circle size={12} />
             Estado
           </div>
-          <span className={`badge-status-detail ${estadoClass[ticket.estado]}`}>
-            {estadoLabel[ticket.estado]}
-          </span>
+          {ticketCerrado && !esAdmin ? (
+            <span className={`badge-status-detail ${estadoClass[estadoActual]}`}>
+              {estadoLabel[estadoActual]}
+            </span>
+          ) : (
+            <div style={{ position: "relative" }}>
+              <select
+                value={estadoActual}
+                onChange={(e) => handleCambiarEstado(e.target.value as TicketEstado)}
+                disabled={cambiandoEstado}
+                style={{
+                  appearance: "none",
+                  border: "1px solid #d9d9d9",
+                  borderRadius: "9999px",
+                  padding: "0.2rem 1.5rem 0.2rem 0.6rem",
+                  fontSize: "0.75rem",
+                  fontWeight: 500,
+                  color: estadoActual === "abierto" ? "#284b63"
+                    : estadoActual === "progreso" ? "#ffffff"
+                    : estadoActual === "resuelto" ? "#ffffff"
+                    : "#353535",
+                  backgroundColor: estadoActual === "abierto" ? "transparent"
+                    : estadoActual === "progreso" ? "#284b63"
+                    : estadoActual === "resuelto" ? "#3c6e71"
+                    : "#d9d9d9",
+                  cursor: cambiandoEstado ? "not-allowed" : "pointer",
+                  outline: "none",
+                  fontFamily: "inherit",
+                }}
+              >
+                {estadosDisponibles.map((e) => (
+                  <option key={e} value={e} style={{ color: "#353535", backgroundColor: "#ffffff" }}>
+                    {estadoLabel[e]}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={10}
+                style={{
+                  position: "absolute",
+                  right: "0.4rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  color: estadoActual === "abierto" ? "#284b63" : "#ffffff",
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* Prioridad */}
@@ -199,26 +310,31 @@ const handleInteraccionCreada = (nueva: Interaccion) => {
             <Tag size={12} />
             Canal
           </div>
-          <span className="ticket-detail__meta-value">{ticket.canal}</span>
+          <span className="ticket-detail__meta-value capitalize">{ticket.canal}</span>
         </div>
 
-        {/* Agente */}
-        <div className="ticket-detail__meta-group">
-          <div className="ticket-detail__meta-label">
-            <User size={12} />
-            Asignado a
-          </div>
-          <div className="ticket-detail__person">
-            <div className="ticket-detail__avatar">
-              {ticket.agente_nombre.charAt(0)}
-            </div>
-            <div className="ticket-detail__person-info">
-              <span className="ticket-detail__person-name">
-                {ticket.agente_nombre}
-              </span>
-            </div>
-          </div>
-        </div>
+{/* Agente */}
+<div className="ticket-detail__meta-group">
+  <div className="ticket-detail__meta-label">
+    <User size={12} />
+    Gestionado por
+  </div>
+  <div className="ticket-detail__person">
+    <div className="ticket-detail__avatar"
+      style={{ backgroundColor: "#284b63" }}
+    >
+      AS
+    </div>
+    <div className="ticket-detail__person-info">
+      <span className="ticket-detail__person-name">
+        Administrador del Sistema
+      </span>
+      <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
+        Sin módulo de usuarios activo
+      </span>
+    </div>
+  </div>
+</div>
 
         {/* Cliente */}
         <div className="ticket-detail__meta-group">
@@ -262,9 +378,7 @@ const handleInteraccionCreada = (nueva: Interaccion) => {
             </div>
             <div className="ticket-detail__tags">
               {ticket.tags.map((tag) => (
-                <span key={tag} className="ticket-detail__tag">
-                  {tag}
-                </span>
+                <span key={tag} className="ticket-detail__tag">{tag}</span>
               ))}
             </div>
           </div>
@@ -272,9 +386,11 @@ const handleInteraccionCreada = (nueva: Interaccion) => {
       </aside>
 
       {/* Panel central — Mensajes */}
-      <main className="ticket-detail__main">
-        <MessageThread ticket={{...ticket, interacciones}}
-        onInteraccionCreada={handleInteraccionCreada} />
+      <main className="ticket-detail__main" style={ticketCerrado ? { paddingTop: "2rem", pointerEvents: ticketCerrado && !esAdmin ? "none" : "auto", opacity: ticketCerrado ? 0.7 : 1 } : {}}>
+        <MessageThread
+          ticket={{ ...ticket, interacciones }}
+          onInteraccionCreada={handleInteraccionCreada}
+        />
       </main>
 
       {/* Panel derecho — KB + Referencias + Actividad */}

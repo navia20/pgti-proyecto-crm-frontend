@@ -7,14 +7,15 @@ import { Ticket, SlaStatus } from "../../lib/types/ticket.types";
 interface TicketsTableProps {
   tickets: Ticket[];
   filter: string;
+  onTicketClick?: (ticket: Ticket) => void;
 }
 
 function getPrioridadLabel(prioridad: string): string {
   const labels: Record<string, string> = {
-    Critica: "Crítica",
-    Alta: "Alta",
-    Media: "Media",
-    Baja: "Baja",
+    critica: "Crítica",
+    alta: "Alta",
+    media: "Media",
+    baja: "Baja",
   };
   return labels[prioridad] ?? prioridad;
 }
@@ -55,20 +56,20 @@ function applyFilter(tickets: Ticket[], filter: string): Ticket[] {
   return tickets;
 }
 
-export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
+export default function TicketsTable({ tickets, filter, onTicketClick }: TicketsTableProps) {
   const filtered = applyFilter(tickets, filter);
 
   const getFilterLabel = (): string => {
     const labels: Record<string, string> = {
-      Abierto: "Abiertos",
-      Progreso: "En progreso",
-      Resuelto: "Resueltos",
-      Cerrado: "Cerrados",
-      Critica: "Críticos",
-      Chat: "Canal Chat",
-      Email: "Canal Email",
-      Telefono: "Canal Teléfono",
-      App: "Canal App",
+      abierto: "Abiertos",
+      progreso: "En progreso",
+      resuelto: "Resueltos",
+      cerrado: "Cerrados",
+      critica: "Críticos",
+      chat: "Canal Chat",
+      email: "Canal Email",
+      telefono: "Canal Teléfono",
+      app: "Canal App",
     };
     return labels[filter] ?? filter;
   };
@@ -102,7 +103,15 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={8} style={{ textAlign: "center", padding: "2rem", color: "#6b7280", fontSize: "0.875rem" }}>
+                <td
+                  colSpan={8}
+                  style={{
+                    textAlign: "center",
+                    padding: "2rem",
+                    color: "#6b7280",
+                    fontSize: "0.875rem",
+                  }}
+                >
                   No hay tickets que coincidan con el filtro seleccionado
                 </td>
               </tr>
@@ -110,7 +119,11 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
               filtered.map((ticket) => {
                 const slaStatus = getSlaStatus(ticket.slaPercent);
                 return (
-                  <tr key={ticket.id}>
+                  <tr
+                    key={ticket.id}
+                    onClick={() => onTicketClick?.(ticket)}
+                    style={{ cursor: onTicketClick ? "pointer" : "default" }}
+                  >
                     <td>
                       <span className="ticket-id">{ticket.id}</span>
                     </td>
@@ -118,7 +131,7 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
                       <span className="ticket-title">{ticket.asunto}</span>
                     </td>
                     <td>
-                      <span className="ticket-category">{ticket.canal}</span>
+                      <span className="ticket-category capitalize">{ticket.canal}</span>
                     </td>
                     <td>
                       <span className={`badge-priority badge-priority--${ticket.prioridad}`}>
@@ -126,7 +139,7 @@ export default function TicketsTable({ tickets, filter }: TicketsTableProps) {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge-status badge-status--${ticket.estado.toLowerCase()}`}>
+                      <span className={`badge-status badge-status--${ticket.estado}`}>
                         {getEstadoLabel(ticket.estado)}
                       </span>
                     </td>

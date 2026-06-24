@@ -29,4 +29,5 @@ export const API_ROUTES = {
   ticketArticulos: `${API_BASE_URL}/api/v1/ticket-articulos`,
   ticketArticulosByTicket: (ticketId: string) =>
     `${API_BASE_URL}/api/v1/ticket-articulos/ticket/${ticketId}`,
+  reportes: `${API_BASE_URL}/api/v1/reportes`,
 };

@@ -10,6 +10,8 @@ import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
 
+const esAdmin = true; // TODO: reemplazar con auth real
+
 function getPrioridadLabel(prioridad: string) {
   const map: Record<string, string> = {
     critica: "Crítica", alta: "Alta", media: "Media", baja: "Baja",
@@ -34,24 +36,36 @@ export default function TicketsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mostrarCerrados, setMostrarCerrados] = useState(false);
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        setIsLoading(true);
-        const data = await ticketsApi.getAll({ take: 50 });
-        setTickets(data.length > 0 ? data : mockTickets);
-      } catch {
-        setTickets(mockTickets);
-        setError("Usando datos locales — backend no disponible");
-      } finally {
-        setIsLoading(false);
+useEffect(() => {
+  const fetchTickets = async () => {
+    try {
+      setIsLoading(true);
+      const data = await ticketsApi.getAll({ take: 50 });
+      setTickets(data.length > 0 ? data : mockTickets);
+
+      // Verificar si viene desde el dashboard con un ticket seleccionado
+      const selectedId = sessionStorage.getItem("selectedTicketId");
+      if (selectedId) {
+        sessionStorage.removeItem("selectedTicketId");
+        const ticket = data.find((t) => t.id === selectedId);
+        if (ticket) {
+          handleSelectTicket(ticket);
+        }
       }
-    };
-    fetchTickets();
-  }, []);
+    } catch {
+      setTickets(mockTickets);
+      setError("Usando datos locales — backend no disponible");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  fetchTickets();
+}, []);
 
   const handleSelectTicket = async (ticket: TicketType) => {
+    if (ticket.estado === "cerrado" && !esAdmin) return;
     setSelectedTicket(ticket);
     setIsLoadingDetalle(true);
     try {
@@ -61,12 +75,15 @@ export default function TicketsPage() {
       ]);
       setTicketDetalle({ ...detalle, interacciones });
     } catch {
-      // fallback a mock detalle
       setTicketDetalle(mockTicketDetalle);
     } finally {
       setIsLoadingDetalle(false);
     }
   };
+
+  const ticketsFiltrados = mostrarCerrados
+    ? tickets
+    : tickets.filter((t) => t.estado !== "cerrado");
 
   if (selectedTicket) {
     return (
@@ -96,7 +113,10 @@ export default function TicketsPage() {
             Cargando detalle del ticket...
           </div>
         ) : (
-          <TicketDetail ticket={ticketDetalle ?? mockTicketDetalle} />
+          <TicketDetail
+            ticket={ticketDetalle ?? mockTicketDetalle}
+            esAdmin={esAdmin}
+          />
         )}
       </div>
     );
@@ -104,15 +124,34 @@ export default function TicketsPage() {
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
+      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-[#353535] tracking-tight mb-1">
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {tickets.length} tickets en total
+            {ticketsFiltrados.length} tickets
+            {!mostrarCerrados && tickets.filter(t => t.estado === "cerrado").length > 0 && (
+              <span className="ml-1 text-[#9ca3af]">
+                ({tickets.filter(t => t.estado === "cerrado").length} cerrados ocultos)
+              </span>
+            )}
           </p>
         </div>
+
+        {/* Toggle mostrar cerrados */}
+        <label className="flex items-center gap-2 text-sm text-[#6b7280] cursor-pointer">
+          <input
+            type="checkbox"
+            checked={mostrarCerrados}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setMostrarCerrados(e.target.checked)
+            }
+            className="accent-[#3c6e71]"
+          />
+          Mostrar tickets cerrados
+        </label>
       </div>
 
       {error && (
@@ -123,7 +162,7 @@ export default function TicketsPage() {
 
       {isLoading ? (
         <SkeletonTable rows={8} />
-      ) : tickets.length === 0 ? (
+      ) : ticketsFiltrados.length === 0 ? (
         <div className="border border-[#d9d9d9] rounded-xl">
           <EmptyState
             icon={Ticket}
@@ -144,7 +183,7 @@ export default function TicketsPage() {
               </tr>
             </thead>
             <tbody>
-              {tickets.map((ticket: TicketType) => {
+              {ticketsFiltrados.map((ticket: TicketType) => {
                 const slaStatus =
                   ticket.slaPercent >= 100 ? "critical"
                   : ticket.slaPercent >= 75 ? "warning"
@@ -154,10 +193,18 @@ export default function TicketsPage() {
                   : slaStatus === "warning" ? "#eab308"
                   : "#22c55e";
 
+                const esCerrado = ticket.estado === "cerrado";
+
                 return (
                   <tr
                     key={ticket.id}
-                    className="border-b border-[#d9d9d9] last:border-0 hover:bg-gray-50 transition-colors cursor-pointer"
+                    className={`border-b border-[#d9d9d9] last:border-0 transition-colors ${
+                      esCerrado && !esAdmin
+                        ? "bg-gray-50 opacity-60 cursor-not-allowed"
+                        : esCerrado && esAdmin
+                        ? "bg-gray-50 opacity-70 cursor-pointer hover:opacity-90"
+                        : "hover:bg-gray-50 cursor-pointer"
+                    }`}
                     onClick={() => handleSelectTicket(ticket)}
                   >
                     <td className="px-4 py-3 font-mono text-xs text-[#6b7280]">
