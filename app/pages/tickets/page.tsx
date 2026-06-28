@@ -38,33 +38,7 @@ export default function TicketsPage() {
   const [error, setError] = useState<string | null>(null);
   const [mostrarCerrados, setMostrarCerrados] = useState(false);
 
-useEffect(() => {
-  const fetchTickets = async () => {
-    try {
-      setIsLoading(true);
-      const data = await ticketsApi.getAll({ take: 50 });
-      setTickets(data.length > 0 ? data : mockTickets);
-
-      // Verificar si viene desde el dashboard con un ticket seleccionado
-      const selectedId = sessionStorage.getItem("selectedTicketId");
-      if (selectedId) {
-        sessionStorage.removeItem("selectedTicketId");
-        const ticket = data.find((t) => t.id === selectedId);
-        if (ticket) {
-          handleSelectTicket(ticket);
-        }
-      }
-    } catch {
-      setTickets(mockTickets);
-      setError("Usando datos locales — backend no disponible");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  fetchTickets();
-}, []);
-
-  const handleSelectTicket = async (ticket: TicketType) => {
+const handleSelectTicket = async (ticket: TicketType) => {
     if (ticket.estado === "cerrado" && !esAdmin) return;
     setSelectedTicket(ticket);
     setIsLoadingDetalle(true);
@@ -80,6 +54,31 @@ useEffect(() => {
       setIsLoadingDetalle(false);
     }
   };
+
+  useEffect(() => {
+    const fetchTickets = async () => {
+      try {
+        setIsLoading(true);
+        const data = await ticketsApi.getAll({ take: 50 });
+        setTickets(data.length > 0 ? data : mockTickets);
+
+        const selectedId = sessionStorage.getItem("selectedTicketId");
+        if (selectedId) {
+          sessionStorage.removeItem("selectedTicketId");
+          const ticket = data.find((t) => t.id === selectedId);
+          if (ticket) {
+            handleSelectTicket(ticket);
+          }
+        }
+      } catch {
+        setTickets(mockTickets);
+        setError("Usando datos locales — backend no disponible");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    void fetchTickets();
+  }, []);
 
   const ticketsFiltrados = mostrarCerrados
     ? tickets

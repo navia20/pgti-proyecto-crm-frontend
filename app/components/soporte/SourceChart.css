@@ -1,0 +1,85 @@
+.source-chart {
+  background-color: #ffffff;
+  border: 1px solid #d9d9d9;
+  border-radius: 12px;
+  padding: 1.5rem;
+}
+
+.source-chart__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.source-chart__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #353535;
+}
+
+.source-chart__total {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.source-chart__body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2rem;
+}
+
+.source-chart__legend {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.source-chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #353535;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease, opacity 0.3s ease;
+}
+
+.source-chart__legend-item:hover {
+  background-color: #f3f4f6;
+}
+
+.source-chart__legend-item--dim {
+  opacity: 0.35;
+}
+
+.source-chart__legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.source-chart__legend-item:hover .source-chart__legend-dot {
+  transform: scale(1.3);
+}
+
+.source-chart__legend-name {
+  min-width: 90px;
+}
+
+.source-chart__legend-pct {
+  color: #6b7280;
+  min-width: 45px;
+  text-align: right;
+}
+
+.source-chart__legend-count {
+  font-weight: 600;
+  min-width: 20px;
+  text-align: right;
+}

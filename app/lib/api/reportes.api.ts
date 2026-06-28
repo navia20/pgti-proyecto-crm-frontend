@@ -19,6 +19,15 @@ export interface MetricasSla {
   porcentaje_cumplimiento: number;
 }
 
+export interface MetricasFuente {
+  pedidos: number;
+  suscripciones: number;
+  pagos: number;
+  salud: number;
+  interno: number;
+  total: number;
+}
+
 export const reportesApi = {
   getMetricasTickets: async (): Promise<MetricasTickets> => {
     const res = await fetch(`${API_ROUTES.reportes}/metricas/tickets`);
@@ -47,6 +56,12 @@ export const reportesApi = {
   getMetricasInteracciones: async () => {
     const res = await fetch(`${API_ROUTES.reportes}/metricas/interacciones`);
     if (!res.ok) throw new Error("Error al obtener métricas de interacciones");
+    return res.json();
+  },
+
+  getMetricasFuente: async (): Promise<MetricasFuente> => {
+    const res = await fetch(`${API_ROUTES.reportes}/metricas/fuente`);
+    if (!res.ok) throw new Error("Error al obtener métricas por fuente");
     return res.json();
   },
 };

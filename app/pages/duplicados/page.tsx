@@ -68,7 +68,7 @@ const handleMerge = async (
     // campos = { nombre_completo: "A", email: "B", ... }
     // El backend espera los campos donde se eligió "B" (el secundario)
     const camposSecundario = Object.entries(campos)
-      .filter(([_, valor]) => valor === "B")
+      .filter(([, valor]) => valor === "B")
       .map(([campo]) => campo);
 
     await clientesApi.merge({

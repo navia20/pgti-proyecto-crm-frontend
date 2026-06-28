@@ -10,8 +10,9 @@ import {
   Shield,
 } from "lucide-react";
 import MetricCard from "../../components/soporte/MetricCard";
+import SourceChart from "../../components/soporte/SourceChart";
 import { SkeletonKpiGrid } from "../../components/ui/Skeleton";
-import { reportesApi, MetricasTickets, MetricasSla } from "../../lib/api/reportes.api";
+import { reportesApi, MetricasTickets, MetricasSla, MetricasFuente } from "../../lib/api/reportes.api";
 
 const periodOptions = [
   { value: "24h", label: "Últimas 24 horas" },
@@ -24,6 +25,7 @@ export default function SoportePage() {
   const [period, setPeriod] = useState("7d");
   const [metricasTickets, setMetricasTickets] = useState<MetricasTickets | null>(null);
   const [metricasSla, setMetricasSla] = useState<MetricasSla | null>(null);
+  const [metricasFuente, setMetricasFuente] = useState<MetricasFuente | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,12 +34,14 @@ export default function SoportePage() {
       try {
         setIsLoading(true);
         setError(null);
-        const [tickets, sla] = await Promise.all([
+        const [tickets, sla, fuente] = await Promise.all([
           reportesApi.getMetricasTickets(),
           reportesApi.getMetricasSla(),
+          reportesApi.getMetricasFuente(),
         ]);
         setMetricasTickets(tickets);
         setMetricasSla(sla);
+        setMetricasFuente(fuente);
       } catch {
         setError("Usando datos de ejemplo — backend no disponible");
       } finally {
@@ -200,6 +204,13 @@ export default function SoportePage() {
               {metricasTickets.cerrados}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Gráfico circular - Tickets por sistema de origen */}
+      {!isLoading && metricasFuente && (
+        <div className="mb-8">
+          <SourceChart data={metricasFuente} />
         </div>
       )}
 

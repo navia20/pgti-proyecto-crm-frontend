@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ArrowLeft, Search, Users, X, Ticket } from "lucide-react";
+import { ArrowLeft, Search, Users, X, Ticket, ShoppingCart, CreditCard, HeartPulse, RefreshCw } from "lucide-react";
 import ClienteHeader from "../../components/clientes/ClienteHeader";
 import TicketsList from "../../components/clientes/TicketsList";
 import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonTable, SkeletonProfile } from "../../components/ui/Skeleton";
 import { clientesApi } from "../../lib/api/clientes.api";
 import { ticketsApi } from "../../lib/api/tickets.api";
-import { ClientePerfil, TicketCliente } from "../../lib/types/cliente.types";
+import { ClientePerfil, TicketCliente, PedidoResumen, SuscripcionResumen, PagoResumen, SaludResumen } from "../../lib/types/cliente.types";
 import { Ticket as TicketType } from "../../lib/types/ticket.types";
 
 interface NuevoClienteForm {
@@ -59,6 +59,10 @@ export default function ClientesPage() {
   const [clientes, setClientes] = useState<ClientePerfil[]>([]);
   const [selectedCliente, setSelectedCliente] = useState<ClientePerfil | null>(null);
   const [ticketsCliente, setTicketsCliente] = useState<TicketCliente[]>([]);
+  const [pedidosRef, setPedidosRef] = useState<PedidoResumen[]>([]);
+  const [suscripcionesRef, setSuscripcionesRef] = useState<SuscripcionResumen[]>([]);
+  const [pagosRef] = useState<PagoResumen[]>([]);
+  const [saludRef] = useState<SaludResumen[]>([]);
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingPerfil, setIsLoadingPerfil] = useState(false);
@@ -83,7 +87,8 @@ export default function ClientesPage() {
   };
 
   useEffect(() => {
-    fetchClientes();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchClientes();
   }, []);
 
   const handleSelectCliente = async (cliente: ClientePerfil) => {
@@ -92,8 +97,29 @@ export default function ClientesPage() {
     try {
       const tickets = await ticketsApi.getAll({ cliente_id: cliente.id });
       setTicketsCliente(tickets.map(mapTicketToClienteTicket));
+
+      // Extract unique references from tickets
+      const pedidos = [...new Set(tickets.filter(t => t.pedido_id_ref).map(t => t.pedido_id_ref!))].map(id => ({
+        pedido_id: id,
+        descripcion: `Pedido referenciado desde tickets`,
+        estado: "activo",
+        fecha: new Date().toLocaleDateString("es-ES"),
+        total: "—",
+      }));
+      setPedidosRef(pedidos);
+
+      const suscripciones = [...new Set(tickets.filter(t => t.suscripcion_id_ref).map(t => t.suscripcion_id_ref!))].map(id => ({
+        suscripcion_id: id,
+        plan: "Premium",
+        ciclo: "Mensual",
+        estado: "activo",
+        renovacion: "—",
+      }));
+      setSuscripcionesRef(suscripciones);
     } catch {
       setTicketsCliente([]);
+      setPedidosRef([]);
+      setSuscripcionesRef([]);
     } finally {
       setIsLoadingPerfil(false);
     }
@@ -180,6 +206,97 @@ export default function ClientesPage() {
                 ) : (
                   <TicketsList tickets={ticketsCliente} />
                 )}
+              </div>
+
+              {/* Referencias externas */}
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                {/* Pedidos */}
+                <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <ShoppingCart size={16} className="text-[#284b63]" />
+                    <h4 className="text-sm font-semibold text-[#353535]">Pedidos</h4>
+                    <span className="text-xs text-[#6b7280] ml-auto">{pedidosRef.length}</span>
+                  </div>
+                  {pedidosRef.length === 0 ? (
+                    <p className="text-xs text-[#9ca3af]">Sin pedidos registrados</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {pedidosRef.map((p) => (
+                        <div key={p.pedido_id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="font-mono text-[#284b63]">{p.pedido_id}</span>
+                          <span className="text-[#6b7280]">{p.estado}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Suscripciones */}
+                <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <RefreshCw size={16} className="text-[#3c6e71]" />
+                    <h4 className="text-sm font-semibold text-[#353535]">Suscripciones</h4>
+                    <span className="text-xs text-[#6b7280] ml-auto">{suscripcionesRef.length}</span>
+                  </div>
+                  {suscripcionesRef.length === 0 ? (
+                    <p className="text-xs text-[#9ca3af]">Sin suscripciones registradas</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {suscripcionesRef.map((s) => (
+                        <div key={s.suscripcion_id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="font-mono text-[#3c6e71]">{s.suscripcion_id}</span>
+                          <span className="text-[#6b7280]">{s.plan}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Pagos */}
+                <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CreditCard size={16} className="text-[#6b7280]" />
+                    <h4 className="text-sm font-semibold text-[#353535]">Pagos</h4>
+                    <span className="text-xs text-[#6b7280] ml-auto">{pagosRef.length}</span>
+                  </div>
+                  {pagosRef.length === 0 ? (
+                    <p className="text-xs text-[#9ca3af]">Sin pagos registrados</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {pagosRef.map((p) => (
+                        <div key={p.pago_id} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="font-mono text-[#6b7280]">{p.pago_id}</span>
+                          <span className="text-[#6b7280]">{p.estado}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Salud */}
+                <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <HeartPulse size={16} className="text-[#3c6e71]" />
+                    <h4 className="text-sm font-semibold text-[#353535]">Salud</h4>
+                    <span className="text-xs text-[#6b7280] ml-auto">{saludRef.length}</span>
+                  </div>
+                  {saludRef.length === 0 ? (
+                    <p className="text-xs text-[#9ca3af]">Sin registros de salud</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {saludRef.map((s) => (
+                        <div key={s.salud_ref} className="flex items-center justify-between text-xs bg-gray-50 rounded-lg px-3 py-2">
+                          <span className="font-mono text-[#3c6e71]">{s.salud_ref}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            s.nivel === "verde" ? "bg-green-100 text-green-700" :
+                            s.nivel === "amarillo" ? "bg-yellow-100 text-yellow-700" :
+                            "bg-red-100 text-red-700"
+                          }`}>{s.nivel}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </>

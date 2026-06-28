@@ -155,3 +155,26 @@ export interface SuscripcionResumen {
   estado: string;
   renovacion: string;
 }
+
+// ============================================
+// PAGOS — desde Proyecto 4 (mock)
+// ============================================
+export interface PagoResumen {
+  pago_id: string;
+  descripcion: string;
+  monto: string;
+  estado: string;
+  fecha: string;
+  metodo: string;
+}
+
+// ============================================
+// SALUD — desde Proyecto 1 (mock)
+// ============================================
+export interface SaludResumen {
+  salud_ref: string;
+  nivel: SaludNivel;
+  descripcion: string;
+  sensor: string;
+  ultimo_check: string;
+}
