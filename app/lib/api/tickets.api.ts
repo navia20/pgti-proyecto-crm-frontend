@@ -71,6 +71,7 @@ export const ticketsApi = {
       cliente_id: form.cliente_id,
       pedido_id_ref: form.pedido_id_ref || undefined,
       suscripcion_id_ref: form.suscripcion_id_ref || undefined,
+      descripcion: form.descripcion || undefined,
     };
     const res = await fetch(API_ROUTES.tickets, {
       method: "POST",
