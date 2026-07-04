@@ -1,3 +1,4 @@
+import { authFetch } from "../auth/KeycloakProvider";
 import { API_ROUTES } from "./config";
 
 export interface MetricasTickets {
@@ -30,37 +31,39 @@ export interface MetricasFuente {
 
 export const reportesApi = {
   getMetricasTickets: async (): Promise<MetricasTickets> => {
-    const res = await fetch(`${API_ROUTES.reportes}/metricas/tickets`);
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/tickets`);
     if (!res.ok) throw new Error("Error al obtener métricas de tickets");
     return res.json();
   },
 
   getMetricasSla: async (): Promise<MetricasSla> => {
-    const res = await fetch(`${API_ROUTES.reportes}/metricas/sla`);
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/sla`);
     if (!res.ok) throw new Error("Error al obtener métricas de SLA");
     return res.json();
   },
 
   getMetricasPrioridad: async () => {
-    const res = await fetch(`${API_ROUTES.reportes}/metricas/prioridad`);
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/prioridad`);
     if (!res.ok) throw new Error("Error al obtener métricas de prioridad");
     return res.json();
   },
 
   getMetricasKb: async () => {
-    const res = await fetch(`${API_ROUTES.reportes}/metricas/kb`);
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/kb`);
     if (!res.ok) throw new Error("Error al obtener métricas de KB");
     return res.json();
   },
 
   getMetricasInteracciones: async () => {
-    const res = await fetch(`${API_ROUTES.reportes}/metricas/interacciones`);
+    const res = await authFetch(
+      `${API_ROUTES.reportes}/metricas/interacciones`,
+    );
     if (!res.ok) throw new Error("Error al obtener métricas de interacciones");
     return res.json();
   },
 
   getMetricasFuente: async (): Promise<MetricasFuente> => {
-    const res = await fetch(`${API_ROUTES.reportes}/metricas/fuente`);
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/fuente`);
     if (!res.ok) throw new Error("Error al obtener métricas por fuente");
     return res.json();
   },

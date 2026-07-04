@@ -1,5 +1,6 @@
 import { API_ROUTES } from "./config";
 import { Ticket, TicketDetalle, CrearTicketForm } from "../types/ticket.types";
+import { authFetch } from "../auth/KeycloakProvider";
 
 function calcularSlaPercent(fechaVencimiento: string): number {
   const ahora = new Date().getTime();
@@ -25,7 +26,8 @@ function mapTicket(data: Record<string, unknown>): Ticket {
     slaPercent: calcularSlaPercent(data.fecha_vencimiento_sla as string),
     // Sin módulo de usuarios, todos los tickets son gestionados por el sistema
     agente_nombre: "Administrador del Sistema",
-    cliente_nombre: (data.cliente_nombre as string) ?? `Cliente ${data.cliente_id}`,
+    cliente_nombre:
+      (data.cliente_nombre as string) ?? `Cliente ${data.cliente_id}`,
   };
 }
 
@@ -42,17 +44,18 @@ export const ticketsApi = {
     if (params?.take) url.searchParams.set("take", String(params.take));
     if (params?.estado) url.searchParams.set("estado", params.estado);
     if (params?.prioridad) url.searchParams.set("prioridad", params.prioridad);
-    if (params?.cliente_id) url.searchParams.set("cliente_id", String(params.cliente_id));
+    if (params?.cliente_id)
+      url.searchParams.set("cliente_id", String(params.cliente_id));
 
-    const res = await fetch(url.toString());
+    const res = await authFetch(url.toString());
     if (!res.ok) throw new Error("Error al obtener tickets");
     const json = await res.json();
-    const lista = Array.isArray(json) ? json : json.data ?? [];
+    const lista = Array.isArray(json) ? json : (json.data ?? []);
     return lista.map(mapTicket);
   },
 
   getById: async (id: string): Promise<TicketDetalle> => {
-    const res = await fetch(API_ROUTES.ticketById(id));
+    const res = await authFetch(API_ROUTES.ticketById(id));
     if (!res.ok) throw new Error("Error al obtener ticket");
     const data = await res.json();
     return {
@@ -73,7 +76,7 @@ export const ticketsApi = {
       suscripcion_id_ref: form.suscripcion_id_ref || undefined,
       descripcion: form.descripcion || undefined,
     };
-    const res = await fetch(API_ROUTES.tickets, {
+    const res = await authFetch(API_ROUTES.tickets, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -84,7 +87,7 @@ export const ticketsApi = {
   },
 
   actualizar: async (id: string, updates: Partial<Ticket>): Promise<Ticket> => {
-    const res = await fetch(API_ROUTES.ticketById(id), {
+    const res = await authFetch(API_ROUTES.ticketById(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
@@ -95,7 +98,9 @@ export const ticketsApi = {
   },
 
   eliminar: async (id: string): Promise<void> => {
-    const res = await fetch(API_ROUTES.ticketById(id), { method: "DELETE" });
+    const res = await authFetch(API_ROUTES.ticketById(id), {
+      method: "DELETE",
+    });
     if (!res.ok) throw new Error("Error al eliminar ticket");
   },
 };

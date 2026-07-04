@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { KeycloakProvider } from "@/app/lib/auth/KeycloakProvider";
+import { RoleGuard } from "@/app/lib/auth/RoleGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +30,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[#FFFFFF] text-[#353535]">
-        {children}
+        <KeycloakProvider>
+          <RoleGuard>{children}</RoleGuard>
+        </KeycloakProvider>
       </body>
     </html>
   );

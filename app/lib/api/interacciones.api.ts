@@ -1,12 +1,15 @@
 import { API_ROUTES } from "./config";
 import { Interaccion } from "../types/ticket.types";
+import { authFetch } from "../auth/KeycloakProvider";
 
 function mapInteraccion(data: Record<string, unknown>): Interaccion {
-  const autorNombre = (data.autor_nombre as string) ?? 
-    data.autor_tipo === "cliente" ? "Cliente" 
-    : data.autor_tipo === "agente" ? "Agente" 
-    : "Sistema";
-    
+  const autorNombre =
+    ((data.autor_nombre as string) ?? data.autor_tipo === "cliente")
+      ? "Cliente"
+      : data.autor_tipo === "agente"
+        ? "Agente"
+        : "Sistema";
+
   const iniciales = autorNombre
     .split(" ")
     .map((n: string) => n.charAt(0))
@@ -29,7 +32,7 @@ function mapInteraccion(data: Record<string, unknown>): Interaccion {
 
 export const interaccionesApi = {
   getByTicket: async (ticketId: string): Promise<Interaccion[]> => {
-    const res = await fetch(API_ROUTES.interaccionesByTicket(ticketId));
+    const res = await authFetch(API_ROUTES.interaccionesByTicket(ticketId));
     if (!res.ok) throw new Error("Error al obtener interacciones");
     const data = await res.json();
     return Array.isArray(data) ? data.map(mapInteraccion) : [];
@@ -42,7 +45,7 @@ export const interaccionesApi = {
     contenido: string;
     es_nota_interna: boolean;
   }): Promise<Interaccion> => {
-    const res = await fetch(API_ROUTES.interacciones, {
+    const res = await authFetch(API_ROUTES.interacciones, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
