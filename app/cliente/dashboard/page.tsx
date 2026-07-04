@@ -58,11 +58,12 @@ export default function ClienteDashboardPage() {
   const fetchTickets = async () => {
     try {
       setIsLoading(true);
-      const data = await ticketsApi.getAll({ cliente_id: CLIENTE_ID, take: 50 });
-      setTickets(data);
+      const result = await ticketsApi.getAll({ cliente_id: CLIENTE_ID, take: 50 });
+      const ticketList = result.data;
+      setTickets(ticketList);
       const interaccionesMap: Record<string, Interaccion[]> = {};
       await Promise.all(
-        data.map(async (ticket) => {
+        ticketList.map(async (ticket) => {
           try {
             const ints = await interaccionesApi.getByTicket(ticket.id);
             interaccionesMap[ticket.id] = ints;
@@ -80,6 +81,7 @@ export default function ClienteDashboardPage() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchTickets();
   }, []);
 

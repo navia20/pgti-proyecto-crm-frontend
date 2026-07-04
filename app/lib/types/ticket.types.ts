@@ -15,6 +15,7 @@ export interface Ticket {
   fecha_vencimiento_sla: string;
   pedido_id_ref: string | null;
   suscripcion_id_ref: string | null;
+  salud_ref: string | null;
   slaPercent: number;
   agente_nombre: string;
   cliente_nombre: string;
@@ -51,8 +52,6 @@ export interface TicketArticulo {
 
 export interface TicketDetalle extends Ticket {
   interacciones: Interaccion[];
-  articulos_kb: TicketArticulo[];
-  tags: string[];
 }
 
 export interface WeeklyChartData {

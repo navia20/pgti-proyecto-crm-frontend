@@ -5,14 +5,25 @@ import {
   Ticket,
   Clock,
   CheckCircle2,
-  AlertCircle,
-  TrendingUp,
-  Shield,
+  MessageSquare,
+  Users,
+  FileText,
+  AlertTriangle,
 } from "lucide-react";
 import MetricCard from "../../components/soporte/MetricCard";
 import SourceChart from "../../components/soporte/SourceChart";
+import TrendChart from "../../components/soporte/TrendChart";
+import PriorityChart from "../../components/soporte/PriorityChart";
 import { SkeletonKpiGrid } from "../../components/ui/Skeleton";
-import { reportesApi, MetricasTickets, MetricasSla, MetricasFuente } from "../../lib/api/reportes.api";
+import {
+  reportesApi,
+  MetricasTickets,
+  MetricasSla,
+  MetricasFuente,
+  TrendData,
+  MetricasPrioridad,
+  MetricasInteraccionesTipo,
+} from "../../lib/api/reportes.api";
 
 const periodOptions = [
   { value: "24h", label: "Últimas 24 horas" },
@@ -21,11 +32,28 @@ const periodOptions = [
   { value: "90d", label: "Últimos 90 días" },
 ];
 
+const PRIORITY_COLORS: Record<string, string> = {
+  critica: "#ef4444",
+  alta: "#f97316",
+  media: "#eab308",
+  baja: "#22c55e",
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  critica: "Crítica",
+  alta: "Alta",
+  media: "Media",
+  baja: "Baja",
+};
+
 export default function SoportePage() {
   const [period, setPeriod] = useState("7d");
   const [metricasTickets, setMetricasTickets] = useState<MetricasTickets | null>(null);
   const [metricasSla, setMetricasSla] = useState<MetricasSla | null>(null);
   const [metricasFuente, setMetricasFuente] = useState<MetricasFuente | null>(null);
+  const [tendencia, setTendencia] = useState<TrendData[]>([]);
+  const [prioridad, setPrioridad] = useState<MetricasPrioridad | null>(null);
+  const [interacciones, setInteracciones] = useState<MetricasInteraccionesTipo | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -34,14 +62,20 @@ export default function SoportePage() {
       try {
         setIsLoading(true);
         setError(null);
-        const [tickets, sla, fuente] = await Promise.all([
+        const [tickets, sla, fuente, tend, prio, ints] = await Promise.all([
           reportesApi.getMetricasTickets(),
           reportesApi.getMetricasSla(),
           reportesApi.getMetricasFuente(),
+          reportesApi.getTendencia(7),
+          reportesApi.getMetricasPrioridad(),
+          reportesApi.getMetricasInteraccionesTipo(),
         ]);
         setMetricasTickets(tickets);
         setMetricasSla(sla);
         setMetricasFuente(fuente);
+        setTendencia(tend);
+        setPrioridad(prio);
+        setInteracciones(ints);
       } catch {
         setError("Usando datos de ejemplo — backend no disponible");
       } finally {
@@ -53,9 +87,9 @@ export default function SoportePage() {
 
   const kpis = [
     {
-      label: "Tickets Activos",
+      label: "Tickets Totales",
       value: metricasTickets?.total_tickets ?? 0,
-      change: -8.2,
+      change: 0,
       icon: Ticket,
     },
     {
@@ -63,7 +97,7 @@ export default function SoportePage() {
       value: metricasTickets
         ? `${metricasTickets.promedio_tiempo_resolucion_horas.toFixed(1)}h`
         : "—",
-      change: -12.5,
+      change: 0,
       icon: Clock,
     },
     {
@@ -71,16 +105,24 @@ export default function SoportePage() {
       value: metricasSla
         ? `${metricasSla.porcentaje_cumplimiento.toFixed(1)}%`
         : "—",
-      change: metricasSla ? metricasSla.porcentaje_cumplimiento - 100 : 0,
+      change: 0,
       icon: CheckCircle2,
     },
     {
-      label: "Tickets Vencidos",
-      value: metricasTickets?.tickets_vencidos ?? 0,
+      label: "Total Mensajes",
+      value: interacciones?.total ?? 0,
       change: 0,
-      icon: Shield,
+      icon: MessageSquare,
     },
   ];
+
+  const priorityData = prioridad
+    ? Object.entries(prioridad).map(([key, valor]) => ({
+        nombre: PRIORITY_LABELS[key] ?? key,
+        valor,
+        color: PRIORITY_COLORS[key] ?? "#6b7280",
+      }))
+    : [];
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
@@ -91,7 +133,7 @@ export default function SoportePage() {
             Panel de Soporte
           </h1>
           <p className="text-sm text-[#6b7280]">
-            Métricas en tiempo real del sistema CRM
+            Métricas y análisis del sistema CRM
           </p>
         </div>
 
@@ -133,7 +175,7 @@ export default function SoportePage() {
         </div>
       )}
 
-      {/* Resumen SLA detallado */}
+      {/* SLA detallado */}
       {!isLoading && metricasSla && (
         <div className="grid grid-cols-3 gap-4 mb-8">
           <div className="bg-white border border-[#d9d9d9] rounded-xl p-5">
@@ -177,7 +219,83 @@ export default function SoportePage() {
         </div>
       )}
 
-      {/* Detalle de estados */}
+      {/* Gráficos - Fila 1: Tendencia + Prioridad */}
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="col-span-2">
+          <TrendChart data={tendencia} />
+        </div>
+        <div>
+          {priorityData.length > 0 && (
+            <PriorityChart data={priorityData} />
+          )}
+        </div>
+      </div>
+
+      {/* Fila 2: Fuentes + Métricas de interacciones */}
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div>
+          {!isLoading && metricasFuente && (
+            <SourceChart data={metricasFuente} />
+          )}
+        </div>
+        <div className="col-span-2">
+          {/* Métricas de interacciones */}
+          <div className="bg-white border border-[#d9d9d9] rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <MessageSquare size={16} className="text-[#284b63]" />
+              <span className="text-sm font-semibold text-[#353535]">
+                Actividad de Mensajes
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-semibold text-[#353535]">
+                  {interacciones?.total ?? 0}
+                </div>
+                <div className="text-xs text-[#6b7280] mt-1">Total</div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-semibold text-[#3c6e71]">
+                  {interacciones?.por_tipo.cliente ?? 0}
+                </div>
+                <div className="text-xs text-[#6b7280] mt-1">
+                  <Users size={10} className="inline mr-1" />
+                  Clientes
+                </div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-semibold text-[#284b63]">
+                  {interacciones?.por_tipo.agente ?? 0}
+                </div>
+                <div className="text-xs text-[#6b7280] mt-1">
+                  <Users size={10} className="inline mr-1" />
+                  Agentes
+                </div>
+              </div>
+              <div className="text-center p-3 bg-gray-50 rounded-lg">
+                <div className="text-2xl font-semibold text-[#6b7280]">
+                  {interacciones?.por_tipo.sistema ?? 0}
+                </div>
+                <div className="text-xs text-[#6b7280] mt-1">
+                  <FileText size={10} className="inline mr-1" />
+                  Sistema
+                </div>
+              </div>
+            </div>
+
+            {interacciones && interacciones.notas_internas > 0 && (
+              <div className="mt-3 pt-3 border-t border-[#d9d9d9] flex items-center gap-2">
+                <span className="text-xs text-[#6b7280]">
+                  {interacciones.notas_internas} notas internas
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Resumen de estados */}
       {!isLoading && metricasTickets && (
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
@@ -207,27 +325,19 @@ export default function SoportePage() {
         </div>
       )}
 
-      {/* Gráfico circular - Tickets por sistema de origen */}
-      {!isLoading && metricasFuente && (
-        <div className="mb-8">
-          <SourceChart data={metricasFuente} />
-        </div>
-      )}
-
-      {/* Banner alerta dinámica */}
+      {/* Alerta SLA */}
       {!isLoading && metricasTickets && metricasTickets.tickets_vencidos > 0 && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <AlertCircle size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+          <AlertTriangle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
           <div className="flex-1">
-            <div className="text-sm font-medium text-amber-900">
+            <div className="text-sm font-medium text-red-900">
               {metricasTickets.tickets_vencidos} tickets han excedido su SLA
             </div>
-            <div className="text-xs text-amber-700 mt-0.5">
+            <div className="text-xs text-red-700 mt-0.5">
               {metricasTickets.tickets_proximos_vencer} tickets próximos a vencer ·{" "}
               {metricasTickets.abiertos} tickets abiertos en total
             </div>
           </div>
-          <TrendingUp size={18} className="text-amber-600 flex-shrink-0" />
         </div>
       )}
     </div>

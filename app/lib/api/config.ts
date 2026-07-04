@@ -1,6 +1,9 @@
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+export const FRONTEND_URL =
+  process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:3000";
+
 export const API_ROUTES = {
   // Tickets
   tickets: `${API_BASE_URL}/api/v1/tickets`,
@@ -30,4 +33,9 @@ export const API_ROUTES = {
   ticketArticulosByTicket: (ticketId: string) =>
     `${API_BASE_URL}/api/v1/ticket-articulos/ticket/${ticketId}`,
   reportes: `${API_BASE_URL}/api/v1/reportes`,
+
+  // Enlaces
+  enlaceByToken: (token: string) => `${API_BASE_URL}/api/v1/enlace/${token}`,
+  crearEnlace: (ticketId: string) => `${API_BASE_URL}/api/v1/tickets/${ticketId}/enlace`,
+  responderEnlace: (token: string) => `${API_BASE_URL}/api/v1/enlace/${token}/interacciones`,
 };

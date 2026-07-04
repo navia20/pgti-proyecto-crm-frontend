@@ -1,6 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import "./CrearTicketModal.css";
-import { X, Ticket, Clock, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Ticket, Clock, ChevronDown, ChevronUp, Search, User, Plus, UserPlus } from "lucide-react";
 import {
   CrearTicketForm,
   TicketPrioridad,
@@ -12,6 +12,7 @@ interface CrearTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit?: (form: CrearTicketForm) => void;
+  onCrearCliente?: (cliente: { nombre_completo: string; email: string; telefono?: string }) => Promise<ClientePerfil>;
   clientes?: ClientePerfil[];
 }
 
@@ -35,6 +36,12 @@ const initialForm: CrearTicketForm = {
   suscripcion_id_ref: "",
 };
 
+const initialClienteForm = {
+  nombre_completo: "",
+  email: "",
+  telefono: "",
+};
+
 function getSlaClass(prioridad: TicketPrioridad): string {
   if (prioridad === "critica") return "modal__sla-preview--critical";
   if (prioridad === "alta") return "modal__sla-preview--warning";
@@ -45,10 +52,33 @@ export default function CrearTicketModal({
   isOpen,
   onClose,
   onSubmit,
+  onCrearCliente,
   clientes = [],
 }: CrearTicketModalProps) {
   const [form, setForm] = useState<CrearTicketForm>(initialForm);
   const [showOpcionales, setShowOpcionales] = useState(false);
+  const [clienteSearch, setClienteSearch] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [showCrearCliente, setShowCrearCliente] = useState(false);
+  const [clienteForm, setClienteForm] = useState(initialClienteForm);
+  const [guardandoCliente, setGuardandoCliente] = useState(false);
+  const [errorCliente, setErrorCliente] = useState<string | null>(null);
+
+  const clienteSeleccionado = useMemo(() => {
+    if (!form.cliente_id) return null;
+    return clientes.find((c) => c.id === form.cliente_id) ?? null;
+  }, [form.cliente_id, clientes]);
+
+  const clientesFiltrados = useMemo(() => {
+    if (!clienteSearch.trim()) return [];
+    const query = clienteSearch.toLowerCase();
+    return clientes.filter(
+      (c) =>
+        c.nombre_completo.toLowerCase().includes(query) ||
+        c.email.toLowerCase().includes(query) ||
+        (c.telefono ?? "").toLowerCase().includes(query)
+    );
+  }, [clienteSearch, clientes]);
 
   if (!isOpen) return null;
 
@@ -57,21 +87,63 @@ export default function CrearTicketModal({
     form.asunto.trim() !== "" &&
     form.descripcion.trim() !== "";
 
+  const isValidCliente = clienteForm.nombre_completo.trim() && clienteForm.email.trim();
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
     setForm((prev: CrearTicketForm) => ({
       ...prev,
-      [name]: name === "cliente_id" ? Number(value) : value,
+      [name]: value,
     }));
+  };
+
+  const handleClienteFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setClienteForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSelectCliente = (cliente: ClientePerfil) => {
+    setForm((prev) => ({ ...prev, cliente_id: cliente.id }));
+    setClienteSearch("");
+    setShowDropdown(false);
+  };
+
+  const handleClearCliente = () => {
+    setForm((prev) => ({ ...prev, cliente_id: null }));
+    setClienteSearch("");
+  };
+
+  const handleCrearCliente = async () => {
+    if (!onCrearCliente || !isValidCliente) return;
+    try {
+      setGuardandoCliente(true);
+      setErrorCliente(null);
+      const nuevoCliente = await onCrearCliente({
+        nombre_completo: clienteForm.nombre_completo,
+        email: clienteForm.email,
+        telefono: clienteForm.telefono || undefined,
+      });
+      setForm((prev) => ({ ...prev, cliente_id: nuevoCliente.id }));
+      setClienteForm(initialClienteForm);
+      setShowCrearCliente(false);
+      setClienteSearch("");
+      setShowDropdown(false);
+    } catch {
+      setErrorCliente("Error al crear el cliente. Verifica que el email no esté en uso.");
+    } finally {
+      setGuardandoCliente(false);
+    }
   };
 
   const handleSubmit = () => {
     if (!isValid) return;
     onSubmit?.(form);
     setForm(initialForm);
+    setClienteSearch("");
     setShowOpcionales(false);
+    setShowCrearCliente(false);
   };
 
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -98,28 +170,153 @@ export default function CrearTicketModal({
 
         {/* Body */}
         <div className="modal__body">
-          {/* Cliente */}
+          {/* Cliente con búsqueda */}
           <div className="modal__field">
             <label className="modal__label modal__label--required">
               Cliente
             </label>
-            <select
-              name="cliente_id"
-              value={form.cliente_id ?? ""}
-              onChange={handleChange}
-              className="modal__select"
-            >
-              <option value="">Selecciona un cliente...</option>
-              {clientes.length > 0 ? (
-                clientes.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nombre_completo} — {c.email}
-                  </option>
-                ))
-              ) : (
-                <option disabled>No hay clientes disponibles</option>
-              )}
-            </select>
+
+            {clienteSeleccionado ? (
+              <div className="modal__cliente-selected">
+                <div className="modal__cliente-info">
+                  <User size={16} className="text-[#3c6e71]" />
+                  <div>
+                    <div className="text-sm font-medium text-[#353535]">
+                      {clienteSeleccionado.nombre_completo}
+                    </div>
+                    <div className="text-xs text-[#6b7280]">
+                      {clienteSeleccionado.email}
+                      {clienteSeleccionado.telefono && ` · ${clienteSeleccionado.telefono}`}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleClearCliente}
+                  className="text-xs text-[#6b7280] hover:text-red-500 transition-colors"
+                >
+                  Cambiar
+                </button>
+              </div>
+            ) : showCrearCliente ? (
+              <div className="modal__crear-cliente">
+                <div className="modal__crear-cliente-header">
+                  <UserPlus size={14} className="text-[#3c6e71]" />
+                  <span className="text-sm font-medium text-[#353535]">Nuevo Cliente</span>
+                  <button
+                    type="button"
+                    onClick={() => { setShowCrearCliente(false); setErrorCliente(null); setClienteForm(initialClienteForm); }}
+                    className="ml-auto text-xs text-[#6b7280] hover:text-[#353535]"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+
+                {errorCliente && (
+                  <div className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-2">
+                    {errorCliente}
+                  </div>
+                )}
+
+                <div className="modal__crear-cliente-fields">
+                  <input
+                    type="text"
+                    name="nombre_completo"
+                    value={clienteForm.nombre_completo}
+                    onChange={handleClienteFormChange}
+                    placeholder="Nombre completo *"
+                    className="modal__input modal__input--small"
+                  />
+                  <input
+                    type="email"
+                    name="email"
+                    value={clienteForm.email}
+                    onChange={handleClienteFormChange}
+                    placeholder="Email *"
+                    className="modal__input modal__input--small"
+                  />
+                  <input
+                    type="tel"
+                    name="telefono"
+                    value={clienteForm.telefono}
+                    onChange={handleClienteFormChange}
+                    placeholder="Teléfono (opcional)"
+                    className="modal__input modal__input--small"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCrearCliente}
+                    disabled={!isValidCliente || guardandoCliente}
+                    className="modal__btn-crear-cliente"
+                  >
+                    {guardandoCliente ? "Guardando..." : "Crear y seleccionar"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="modal__search-wrapper">
+                <Search size={14} className="modal__search-icon" />
+                <input
+                  type="text"
+                  value={clienteSearch}
+                  onChange={(e) => {
+                    setClienteSearch(e.target.value);
+                    setShowDropdown(true);
+                  }}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+                  placeholder="Buscar por nombre, email o teléfono..."
+                  className="modal__input modal__input--search"
+                />
+                {showDropdown && (
+                  <div className="modal__dropdown">
+                    {clientesFiltrados.length > 0 && (
+                      <>
+                        {clientesFiltrados.slice(0, 6).map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            className="modal__dropdown-item"
+                            onMouseDown={() => handleSelectCliente(c)}
+                          >
+                            <div className="font-medium text-[#353535] text-sm">
+                              {c.nombre_completo}
+                            </div>
+                            <div className="text-xs text-[#6b7280]">
+                              {c.email}
+                              {c.telefono && ` · ${c.telefono}`}
+                            </div>
+                          </button>
+                        ))}
+                      </>
+                    )}
+                    {clientesFiltrados.length === 0 && !clienteSearch && (
+                      <div className="modal__dropdown modal__dropdown--empty">
+                        Escribe para buscar un cliente...
+                      </div>
+                    )}
+                    {clientesFiltrados.length === 0 && clienteSearch && (
+                      <div className="modal__dropdown modal__dropdown--empty">
+                        No se encontraron clientes con &quot;{clienteSearch}&quot;
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      className="modal__dropdown-add"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        setShowCrearCliente(true);
+                        setShowDropdown(false);
+                        setClienteSearch("");
+                      }}
+                    >
+                      <Plus size={14} />
+                      Crear nuevo cliente
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Asunto */}

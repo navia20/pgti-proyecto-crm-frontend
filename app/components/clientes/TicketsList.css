@@ -8,11 +8,13 @@
   border: 1px solid #d9d9d9;
   border-radius: 10px;
   padding: 1rem 1.25rem;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  cursor: pointer;
 }
 
 .tickets-list__item:hover {
   border-color: #3c6e71;
+  background-color: #f9fafb;
 }
 
 .tickets-list__top {
