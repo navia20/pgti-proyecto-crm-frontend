@@ -1,5 +1,6 @@
 import { API_ROUTES } from "./config";
 import { ClientePerfil } from "../types/cliente.types";
+import { authFetch } from "../auth/KeycloakProvider";
 
 function mapCliente(data: Record<string, unknown>): ClientePerfil {
   return {
@@ -20,21 +21,21 @@ function mapCliente(data: Record<string, unknown>): ClientePerfil {
 
 export const clientesApi = {
   getAll: async (): Promise<ClientePerfil[]> => {
-    const res = await fetch(API_ROUTES.clientes);
+    const res = await authFetch(API_ROUTES.clientes);
     if (!res.ok) throw new Error("Error al obtener clientes");
     const data = await res.json();
     return Array.isArray(data) ? data.map(mapCliente) : [];
   },
 
   getById: async (id: number): Promise<ClientePerfil> => {
-    const res = await fetch(API_ROUTES.clienteById(id));
+    const res = await authFetch(API_ROUTES.clienteById(id));
     if (!res.ok) throw new Error("Error al obtener cliente");
     const data = await res.json();
     return mapCliente(data);
   },
 
   crear: async (cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
-    const res = await fetch(API_ROUTES.clientes, {
+    const res = await authFetch(API_ROUTES.clientes, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cliente),
@@ -45,7 +46,7 @@ export const clientesApi = {
   },
 
   actualizar: async (id: number, cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
-    const res = await fetch(API_ROUTES.clienteById(id), {
+    const res = await authFetch(API_ROUTES.clienteById(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cliente),
@@ -56,7 +57,7 @@ export const clientesApi = {
   },
 
   eliminar: async (id: number): Promise<void> => {
-    const res = await fetch(API_ROUTES.clienteById(id), {
+    const res = await authFetch(API_ROUTES.clienteById(id), {
       method: "DELETE",
     });
     if (!res.ok) throw new Error("Error al eliminar cliente");
@@ -64,7 +65,7 @@ export const clientesApi = {
 
   getDuplicados: async (threshold = 50) => {
     const url = `${API_ROUTES.clientesDuplicados}?threshold=${threshold}`;
-    const res = await fetch(url);
+    const res = await authFetch(url);
     if (!res.ok) throw new Error("Error al obtener duplicados");
     return res.json();
   },
@@ -74,7 +75,7 @@ merge: async (payload: {
   cliente_secundario_id: number;
   campos_a_conservar: string[];
 }) => {
-  const res = await fetch(API_ROUTES.clientesMerge, {
+  const res = await authFetch(API_ROUTES.clientesMerge, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),

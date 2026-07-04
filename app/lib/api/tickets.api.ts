@@ -1,5 +1,6 @@
 import { API_ROUTES } from "./config";
 import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad } from "../types/ticket.types";
+import { authFetch } from "../auth/KeycloakProvider";
 
 const SLA_HOURS: Record<TicketPrioridad, number> = {
   critica: 4,
@@ -66,7 +67,7 @@ export const ticketsApi = {
     if (params?.ordenar) url.searchParams.set("ordenar", params.ordenar);
     if (params?.direccion) url.searchParams.set("direccion", params.direccion);
 
-    const res = await fetch(url.toString());
+    const res = await authFetch(url.toString());
     if (!res.ok) throw new Error("Error al obtener tickets");
     const json = await res.json();
     const lista = Array.isArray(json) ? json : json.data ?? [];
@@ -77,7 +78,7 @@ export const ticketsApi = {
   },
 
   getById: async (id: string): Promise<TicketDetalle> => {
-    const res = await fetch(API_ROUTES.ticketById(id));
+    const res = await authFetch(API_ROUTES.ticketById(id));
     if (!res.ok) throw new Error("Error al obtener ticket");
     const data = await res.json();
     return {
@@ -96,7 +97,7 @@ export const ticketsApi = {
       suscripcion_id_ref: form.suscripcion_id_ref || undefined,
       descripcion: form.descripcion || undefined,
     };
-    const res = await fetch(API_ROUTES.tickets, {
+    const res = await authFetch(API_ROUTES.tickets, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -107,18 +108,23 @@ export const ticketsApi = {
   },
 
   actualizar: async (id: string, updates: Partial<Ticket>): Promise<Ticket> => {
-    const res = await fetch(API_ROUTES.ticketById(id), {
+    const res = await authFetch(API_ROUTES.ticketById(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
-    if (!res.ok) throw new Error("Error al actualizar ticket");
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Error al actualizar ticket (${res.status}): ${body}`);
+    }
     const data = await res.json();
     return mapTicket(data);
   },
 
   eliminar: async (id: string): Promise<void> => {
-    const res = await fetch(API_ROUTES.ticketById(id), { method: "DELETE" });
+    const res = await authFetch(API_ROUTES.ticketById(id), {
+      method: "DELETE",
+    });
     if (!res.ok) throw new Error("Error al eliminar ticket");
   },
 };

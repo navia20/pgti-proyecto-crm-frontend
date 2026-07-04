@@ -43,6 +43,11 @@ const estadoClass: Record<string, string> = {
 const estadosAgente: TicketEstado[] = ["abierto", "progreso", "resuelto"];
 const estadosAdmin: TicketEstado[] = ["abierto", "progreso", "resuelto", "cerrado"];
 
+const AGENTES_CONOCIDOS = [
+  { id: "p7.admin@ucn.cl", nombre: "Admin CRM" },
+  { id: "p7.agent@ucn.cl", nombre: "Agente CRM" },
+];
+
 function PanelReferencias({ ticket }: { ticket: TicketDetalle }) {
   return (
     <div className="ticket-referencias">
@@ -99,6 +104,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [resolucionTexto, setResolucionTexto] = useState("");
+  const [agenteActual, setAgenteActual] = useState<string | null>(ticket.agente_id ?? null);
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
@@ -203,6 +209,28 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
       console.error("Error al generar enlace:", error);
     } finally {
       setGenerandoEnlace(false);
+    }
+  };
+
+  const handleAsignarAgente = async (nuevoAgenteId: string) => {
+    const valor = nuevoAgenteId || null;
+    if (valor === agenteActual) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, { agente_id: valor || undefined });
+      setAgenteActual(valor);
+      const nombreAgente = valor
+        ? AGENTES_CONOCIDOS.find((a) => a.id === valor)?.nombre ?? valor
+        : "Sin asignar";
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Ticket asignado a ${nombreAgente}`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
+    } catch (error) {
+      console.error("Error al asignar agente:", error);
     }
   };
 
@@ -445,19 +473,46 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
             <User size={12} />
             Gestionado por
           </div>
-          <div className="ticket-detail__person">
-            <div className="ticket-detail__avatar" style={{ backgroundColor: "#284b63" }}>
-              AS
+          {esAdmin ? (
+            <div className="relative">
+              <select
+                value={agenteActual ?? ""}
+                onChange={(e) => handleAsignarAgente(e.target.value)}
+                className="w-full appearance-none bg-white border border-[#d9d9d9] rounded-lg px-3 py-2 pr-8 text-sm text-[#353535] focus:outline-none focus:border-[#3c6e71] cursor-pointer"
+              >
+                <option value="">Sin asignar</option>
+                {AGENTES_CONOCIDOS.map((agente) => (
+                  <option key={agente.id} value={agente.id}>
+                    {agente.nombre}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                style={{
+                  position: "absolute",
+                  right: "0.5rem",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  pointerEvents: "none",
+                  color: "#6b7280",
+                }}
+              />
             </div>
-            <div className="ticket-detail__person-info">
-              <span className="ticket-detail__person-name">
-                Administrador del Sistema
-              </span>
-              <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
-                Sin módulo de usuarios activo
-              </span>
+          ) : (
+            <div className="ticket-detail__person">
+              <div className="ticket-detail__avatar" style={{ backgroundColor: "#284b63" }}>
+                {agenteActual ? AGENTES_CONOCIDOS.find((a) => a.id === agenteActual)?.nombre.charAt(0) ?? "A" : "SA"}
+              </div>
+              <div className="ticket-detail__person-info">
+                <span className="ticket-detail__person-name">
+                  {agenteActual
+                    ? AGENTES_CONOCIDOS.find((a) => a.id === agenteActual)?.nombre ?? agenteActual
+                    : "Sin asignar"}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="ticket-detail__meta-group">

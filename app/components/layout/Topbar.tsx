@@ -10,8 +10,7 @@ import {
   Copy,
   HeadphonesIcon,
   Plus,
-  Shield,
-  User,
+  LogOut,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import CrearTicketModal from "../tickets/CrearTicketModal";
@@ -19,6 +18,7 @@ import { CrearTicketForm } from "../../lib/types/ticket.types";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { clientesApi } from "../../lib/api/clientes.api";
 import { ClientePerfil } from "../../lib/types/cliente.types";
+import { useAuth } from "@/app/lib/auth/KeycloakProvider";
 import { useRole } from "../../lib/context/RoleContext";
 
 const allNavItems = [
@@ -32,9 +32,13 @@ const allNavItems = [
 export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setRole, esAdmin } = useRole();
+  const { esAdmin } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [clientes, setClientes] = useState<ClientePerfil[]>([]);
+
+  const { keycloak } = useAuth();
+  const username = keycloak.tokenParsed?.preferred_username ?? "Usuario";
+  const initials = username.slice(0, 2).toUpperCase();
 
   const navItems = allNavItems.filter((item) => esAdmin || !item.adminOnly);
 
@@ -50,30 +54,30 @@ export default function Topbar() {
     fetchClientes();
   }, []);
 
-const handleCrearTicket = async (form: CrearTicketForm) => {
-  try {
-    const ticket = await ticketsApi.crear(form);
-    if (form.descripcion.trim() && ticket.id) {
-      await interaccionesApi.crear({
-        ticket_id: ticket.id,
-        autor_tipo: "cliente",
-        autor_id: "00000000-0000-0000-0000-000000000001",
-        contenido: form.descripcion,
-        es_nota_interna: false,
-      });
+  const handleCrearTicket = async (form: CrearTicketForm) => {
+    try {
+      const ticket = await ticketsApi.crear(form);
+      if (form.descripcion.trim() && ticket.id) {
+        await interaccionesApi.crear({
+          ticket_id: ticket.id,
+          autor_tipo: "cliente",
+          autor_id: "00000000-0000-0000-0000-000000000001",
+          contenido: form.descripcion,
+          es_nota_interna: false,
+        });
+      }
+      setModalOpen(false);
+      window.location.reload();
+    } catch (error) {
+      console.error("Error al crear ticket:", error);
     }
-    setModalOpen(false);
-    window.location.reload();
-  } catch (error) {
-    console.error("Error al crear ticket:", error);
-  }
-};
+  };
 
-const handleCrearCliente = async (cliente: { nombre_completo: string; email: string; telefono?: string }) => {
-  const nuevoCliente = await clientesApi.crear(cliente);
-  setClientes((prev) => [...prev, nuevoCliente]);
-  return nuevoCliente;
-};
+  const handleCrearCliente = async (cliente: { nombre_completo: string; email: string; telefono?: string }) => {
+    const nuevoCliente = await clientesApi.crear(cliente);
+    setClientes((prev) => [...prev, nuevoCliente]);
+    return nuevoCliente;
+  };
 
   return (
     <>
@@ -121,24 +125,15 @@ const handleCrearCliente = async (cliente: { nombre_completo: string; email: str
               Crear Ticket
             </button>
           )}
-          <div className="flex items-center bg-[#1e3a4f] rounded-lg p-0.5 gap-0.5">
+          <div className="topbar__user">
+            <div className="topbar__user-avatar">{initials}</div>
+            <span>{username}</span>
             <button
-              onClick={() => setRole("admin")}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                esAdmin ? "bg-[#3c6e71] text-white" : "text-gray-400 hover:text-white"
-              }`}
+              onClick={() => keycloak.logout()}
+              className="topbar__create-btn"
             >
-              <Shield size={12} />
-              Admin
-            </button>
-            <button
-              onClick={() => setRole("agente")}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                !esAdmin ? "bg-[#3c6e71] text-white" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <User size={12} />
-              Agente
+              <LogOut size={15} />
+              Salir
             </button>
           </div>
         </div>

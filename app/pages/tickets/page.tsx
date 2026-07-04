@@ -13,7 +13,6 @@ import { interaccionesApi } from "../../lib/api/interacciones.api";
 import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
 import { useRole } from "../../lib/context/RoleContext";
 
-const AGENTE_ID = "00000000-0000-0000-0000-000000000001";
 const PAGE_SIZE = 15;
 
 const defaultFilters: TicketFilters = {
@@ -25,7 +24,7 @@ const defaultFilters: TicketFilters = {
 };
 
 export default function TicketsPage() {
-  const { esAdmin } = useRole();
+  const { esAdmin, userEmail } = useRole();
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -49,7 +48,7 @@ export default function TicketsPage() {
         canal: filters.canal || undefined,
         search: filters.search || undefined,
         referencia: filters.referencia || undefined,
-        agente_id: !esAdmin ? AGENTE_ID : undefined,
+        agente_id: !esAdmin ? userEmail : undefined,
       });
       setTickets(result.data);
       setTotal(result.total);
@@ -60,7 +59,7 @@ export default function TicketsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, filters, esAdmin]);
+  }, [page, filters, esAdmin, userEmail]);
 
   const handleFilterChange = (newFilters: TicketFilters) => {
     setFilters(newFilters);
@@ -96,9 +95,12 @@ export default function TicketsPage() {
       void (async () => {
         setIsLoadingDetalle(true);
         try {
-          const detalle = await ticketsApi.getById(selectedId);
+          const [detalle, interacciones] = await Promise.all([
+            ticketsApi.getById(selectedId),
+            interaccionesApi.getByTicket(selectedId),
+          ]);
           setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, salud_ref: detalle.salud_ref, slaPercent: 0, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
-          setTicketDetalle(detalle);
+          setTicketDetalle({ ...detalle, interacciones });
         } catch {
           sessionStorage.removeItem("selectedTicketId");
         } finally {
@@ -142,8 +144,9 @@ export default function TicketsPage() {
         </div>
 
         {isLoadingDetalle ? (
-          <div className="flex-1 flex items-center justify-center text-sm text-[#6b7280]">
-            Cargando detalle del ticket...
+          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[#6b7280]">
+            <div className="w-8 h-8 border-2 border-[#d9d9d9] border-t-[#284b63] rounded-full animate-spin" />
+            <span className="text-sm">Cargando mensajes...</span>
           </div>
         ) : (
           <TicketDetail

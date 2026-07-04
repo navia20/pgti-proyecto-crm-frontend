@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { User, LayoutGrid, AlertTriangle, Clock, CheckCircle2, AlertCircle } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import TicketsTable from "../../components/dashboard/TicketsTable";
 import EmptyState from "../../components/ui/EmptyState";
@@ -9,12 +9,11 @@ import { SkeletonKpiGrid, SkeletonTable } from "../../components/ui/Skeleton";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { reportesApi, MetricasTickets } from "../../lib/api/reportes.api";
 import { Ticket as TicketType } from "../../lib/types/ticket.types";
-
-const AGENTE_ACTUAL = "agt-001";
+import { useRole } from "../../lib/context/RoleContext";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const [vistaPropia, setVistaPropia] = useState(false);
+  const { esAdmin, userEmail } = useRole();
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +24,10 @@ export default function DashboardPage() {
       setIsLoading(true);
       setError(null);
       const [result, metricas] = await Promise.all([
-        ticketsApi.getAll({ take: 10 }),
+        ticketsApi.getAll({
+          take: 10,
+          agente_id: !esAdmin ? userEmail : undefined,
+        }),
         reportesApi.getMetricasTickets(),
       ]);
       setTickets(result.data);
@@ -36,7 +38,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [esAdmin, userEmail]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -48,11 +50,7 @@ export default function DashboardPage() {
     router.push("/pages/tickets");
   };
 
-  const ticketsFiltradosPorVista = vistaPropia
-    ? tickets.filter((t: TicketType) => t.agente_id === AGENTE_ACTUAL)
-    : tickets;
-
-  const urgentTickets = ticketsFiltradosPorVista.filter((t) => t.prioridad === "critica").length;
+  const urgentTickets = tickets.filter((t) => t.prioridad === "critica").length;
   const proximosVencer = metricasTickets?.tickets_proximos_vencer ?? 0;
   const vencidos = metricasTickets?.tickets_vencidos ?? 0;
 
@@ -65,44 +63,14 @@ export default function DashboardPage() {
             Soporte Técnico
           </h1>
           <p className="text-sm text-[#6b7280]">
-            Vista operativa — tickets que requieren acción
+            {esAdmin ? "Vista operativa — tickets que requieren acción" : "Tus tickets asignados"}
           </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="flex items-center border border-[#d9d9d9] rounded-lg overflow-hidden bg-white">
-            <button
-              onClick={() => setVistaPropia(false)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm transition-colors ${
-                !vistaPropia ? "bg-[#284b63] text-white" : "text-[#6b7280] hover:text-[#353535]"
-              }`}
-            >
-              <LayoutGrid size={13} />
-              Todos
-            </button>
-            <button
-              onClick={() => setVistaPropia(true)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm transition-colors ${
-                vistaPropia ? "bg-[#284b63] text-white" : "text-[#6b7280] hover:text-[#353535]"
-              }`}
-            >
-              <User size={13} />
-              Mis tickets
-            </button>
-          </div>
         </div>
       </div>
 
       {error && (
         <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           ⚠️ {error}
-        </div>
-      )}
-
-      {vistaPropia && !error && (
-        <div className="flex items-center gap-2 mb-4 text-sm text-[#284b63] bg-[#f0f7f7] border border-[#3c6e71] rounded-lg px-3 py-2 w-fit">
-          <User size={14} />
-          Mostrando solo tus tickets asignados
         </div>
       )}
 
@@ -121,7 +89,7 @@ export default function DashboardPage() {
                 <span className="text-xs text-[#6b7280]">Abiertos</span>
               </div>
               <div className="text-2xl font-semibold text-[#284b63]">
-                {metricasTickets?.abiertos ?? ticketsFiltradosPorVista.filter(t => t.estado === "abierto").length}
+                {metricasTickets?.abiertos ?? tickets.filter(t => t.estado === "abierto").length}
               </div>
             </div>
             <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
@@ -139,7 +107,7 @@ export default function DashboardPage() {
                 <span className="text-xs text-[#6b7280]">En progreso</span>
               </div>
               <div className="text-2xl font-semibold text-[#353535]">
-                {metricasTickets?.en_progreso ?? ticketsFiltradosPorVista.filter(t => t.estado === "progreso").length}
+                {metricasTickets?.en_progreso ?? tickets.filter(t => t.estado === "progreso").length}
               </div>
             </div>
             <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
@@ -148,7 +116,7 @@ export default function DashboardPage() {
                 <span className="text-xs text-[#6b7280]">Resueltos</span>
               </div>
               <div className="text-2xl font-semibold text-[#3c6e71]">
-                {metricasTickets?.resueltos ?? ticketsFiltradosPorVista.filter(t => t.estado === "resuelto").length}
+                {metricasTickets?.resueltos ?? tickets.filter(t => t.estado === "resuelto").length}
               </div>
             </div>
           </div>
@@ -183,21 +151,21 @@ export default function DashboardPage() {
           )}
 
           {/* Tabla de tickets recientes */}
-          {ticketsFiltradosPorVista.length === 0 ? (
+          {tickets.length === 0 ? (
             <div className="border border-[#d9d9d9] rounded-xl mb-8">
               <EmptyState
                 icon={AlertCircle}
-                title={vistaPropia ? "No tienes tickets asignados" : "No hay tickets"}
+                title={esAdmin ? "No hay tickets" : "No tienes tickets asignados"}
                 description={
-                  vistaPropia
-                    ? "No tienes tickets asignados actualmente."
-                    : "No hay tickets en el sistema."
+                  esAdmin
+                    ? "No hay tickets en el sistema."
+                    : "No tienes tickets asignados actualmente."
                 }
               />
             </div>
           ) : (
             <TicketsTable
-              tickets={ticketsFiltradosPorVista}
+              tickets={tickets}
               filter=""
               onTicketClick={handleTicketClick}
             />
