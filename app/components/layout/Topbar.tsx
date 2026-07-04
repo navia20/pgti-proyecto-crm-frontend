@@ -11,8 +11,6 @@ import {
   HeadphonesIcon,
   Plus,
   LogOut,
-  Shield,
-  User,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import CrearTicketModal from "../tickets/CrearTicketModal";
@@ -34,7 +32,7 @@ const allNavItems = [
 export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { setRole, esAdmin } = useRole();
+  const { esAdmin } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [clientes, setClientes] = useState<ClientePerfil[]>([]);
 
@@ -127,26 +125,6 @@ export default function Topbar() {
               Crear Ticket
             </button>
           )}
-          <div className="flex items-center bg-[#1e3a4f] rounded-lg p-0.5 gap-0.5">
-            <button
-              onClick={() => setRole("admin")}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                esAdmin ? "bg-[#3c6e71] text-white" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <Shield size={12} />
-              Admin
-            </button>
-            <button
-              onClick={() => setRole("agente")}
-              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
-                !esAdmin ? "bg-[#3c6e71] text-white" : "text-gray-400 hover:text-white"
-              }`}
-            >
-              <User size={12} />
-              Agente
-            </button>
-          </div>
           <div className="topbar__user">
             <div className="topbar__user-avatar">{initials}</div>
             <span>{username}</span>

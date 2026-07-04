@@ -46,7 +46,7 @@ export const clientesApi = {
   },
 
   actualizar: async (id: number, cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
-    const res = await fetch(API_ROUTES.clienteById(id), {
+    const res = await authFetch(API_ROUTES.clienteById(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(cliente),
@@ -57,7 +57,7 @@ export const clientesApi = {
   },
 
   eliminar: async (id: number): Promise<void> => {
-    const res = await fetch(API_ROUTES.clienteById(id), {
+    const res = await authFetch(API_ROUTES.clienteById(id), {
       method: "DELETE",
     });
     if (!res.ok) throw new Error("Error al eliminar cliente");

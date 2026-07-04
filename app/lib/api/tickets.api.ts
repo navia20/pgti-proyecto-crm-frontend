@@ -113,7 +113,10 @@ export const ticketsApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
-    if (!res.ok) throw new Error("Error al actualizar ticket");
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Error al actualizar ticket (${res.status}): ${body}`);
+    }
     const data = await res.json();
     return mapTicket(data);
   },
