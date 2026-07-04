@@ -64,6 +64,12 @@ const handleCrearTicket = async (form: CrearTicketForm) => {
   }
 };
 
+const handleCrearCliente = async (cliente: { nombre_completo: string; email: string; telefono?: string }) => {
+  const nuevoCliente = await clientesApi.crear(cliente);
+  setClientes((prev) => [...prev, nuevoCliente]);
+  return nuevoCliente;
+};
+
   return (
     <>
       <header className="topbar">
@@ -119,6 +125,7 @@ const handleCrearTicket = async (form: CrearTicketForm) => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleCrearTicket}
+        onCrearCliente={handleCrearCliente}
         clientes={clientes}
       />
     </>

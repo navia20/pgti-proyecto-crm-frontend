@@ -1,80 +1,60 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Filter, Search, User, LayoutGrid, Ticket } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { User, LayoutGrid, AlertTriangle, Clock, CheckCircle2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
-import KpiCard from "../../components/dashboard/Kpicard";
 import TicketsTable from "../../components/dashboard/TicketsTable";
 import EmptyState from "../../components/ui/EmptyState";
 import { SkeletonKpiGrid, SkeletonTable } from "../../components/ui/Skeleton";
-import { mockTickets } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { reportesApi, MetricasTickets } from "../../lib/api/reportes.api";
 import { Ticket as TicketType } from "../../lib/types/ticket.types";
 
 const AGENTE_ACTUAL = "agt-001";
 
-const filterOptions = [
-  { value: "all", label: "Todos los tickets" },
-  { value: "abierto", label: "Abiertos" },
-  { value: "progreso", label: "En progreso" },
-  { value: "resuelto", label: "Resueltos" },
-  { value: "critica", label: "Críticos" },
-  { value: "chat", label: "Canal: Chat" },
-  { value: "email", label: "Canal: Email" },
-  { value: "telefono", label: "Canal: Teléfono" },
-  { value: "app", label: "Canal: App" },
-];
-
 export default function DashboardPage() {
   const router = useRouter();
-  const [filter, setFilter] = useState("all");
   const [vistaPropia, setVistaPropia] = useState(false);
-  const [tickets, setTickets] = useState<TicketType[]>(mockTickets);
+  const [tickets, setTickets] = useState<TicketType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [metricasTickets, setMetricasTickets] = useState<MetricasTickets | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const [ticketsData, metricas] = await Promise.all([
-          ticketsApi.getAll({ take: 50 }),
-          reportesApi.getMetricasTickets(),
-        ]);
-        setTickets(ticketsData.length > 0 ? ticketsData : mockTickets);
-        setMetricasTickets(metricas);
-      } catch {
-        setTickets(mockTickets);
-        setError("Usando datos locales — backend no disponible");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
+  const fetchTickets = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const [result, metricas] = await Promise.all([
+        ticketsApi.getAll({ take: 10 }),
+        reportesApi.getMetricasTickets(),
+      ]);
+      setTickets(result.data);
+      setMetricasTickets(metricas);
+    } catch {
+      setTickets([]);
+      setError("Usando datos locales — backend no disponible");
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchTickets();
+  }, [fetchTickets]);
+
+  const handleTicketClick = (ticket: TicketType) => {
+    sessionStorage.setItem("selectedTicketId", ticket.id);
+    router.push("/pages/tickets");
+  };
 
   const ticketsFiltradosPorVista = vistaPropia
     ? tickets.filter((t: TicketType) => t.agente_id === AGENTE_ACTUAL)
     : tickets;
 
-  // KPIs — prioriza datos del backend, fallback a cálculo local
-  const openTickets = metricasTickets?.abiertos
-    ?? ticketsFiltradosPorVista.filter((t) => t.estado === "abierto").length;
   const urgentTickets = ticketsFiltradosPorVista.filter((t) => t.prioridad === "critica").length;
-  const inProgressTickets = metricasTickets?.en_progreso
-    ?? ticketsFiltradosPorVista.filter((t) => t.estado === "progreso").length;
-  const resolvedToday = metricasTickets?.resueltos
-    ?? ticketsFiltradosPorVista.filter((t) => t.estado === "resuelto").length;
-
-  const handleTicketClick = (ticket: TicketType) => {
-    // Guardar el ticket seleccionado en sessionStorage para que la página de tickets lo cargue
-    sessionStorage.setItem("selectedTicketId", ticket.id);
-    router.push("/pages/tickets");
-  };
+  const proximosVencer = metricasTickets?.tickets_proximos_vencer ?? 0;
+  const vencidos = metricasTickets?.tickets_vencidos ?? 0;
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
@@ -85,12 +65,11 @@ export default function DashboardPage() {
             Soporte Técnico
           </h1>
           <p className="text-sm text-[#6b7280]">
-            Dashboard operativo en tiempo real
+            Vista operativa — tickets que requieren acción
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Toggle vista */}
           <div className="flex items-center border border-[#d9d9d9] rounded-lg overflow-hidden bg-white">
             <button
               onClick={() => setVistaPropia(false)}
@@ -111,38 +90,15 @@ export default function DashboardPage() {
               Mis tickets
             </button>
           </div>
-
-          {/* Filtro */}
-          <div className="flex items-center gap-2 border border-[#d9d9d9] rounded-lg px-3 py-2 bg-white">
-            <Filter size={14} className="text-[#6b7280]" />
-            <select
-              value={filter}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setFilter(e.target.value)}
-              className="text-sm text-[#353535] bg-transparent outline-none cursor-pointer"
-            >
-              {filterOptions.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Buscar */}
-          <button className="border border-[#d9d9d9] rounded-lg p-2 bg-white hover:border-[#3c6e71] transition-colors">
-            <Search size={16} className="text-[#6b7280]" />
-          </button>
         </div>
       </div>
 
-      {/* Banner error/fallback */}
       {error && (
         <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           ⚠️ {error}
         </div>
       )}
 
-      {/* Indicador vista propia */}
       {vistaPropia && !error && (
         <div className="flex items-center gap-2 mb-4 text-sm text-[#284b63] bg-[#f0f7f7] border border-[#3c6e71] rounded-lg px-3 py-2 w-fit">
           <User size={14} />
@@ -150,7 +106,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Loading */}
       {isLoading ? (
         <>
           <SkeletonKpiGrid />
@@ -158,36 +113,95 @@ export default function DashboardPage() {
         </>
       ) : (
         <>
-          <KpiCard
-            openTickets={openTickets}
-            urgentTickets={urgentTickets}
-            inProgressTickets={inProgressTickets}
-            resolvedToday={resolvedToday}
-          />
+          {/* KPIs compactos */}
+          <div className="grid grid-cols-4 gap-4 mb-6">
+            <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle size={15} className="text-[#284b63]" />
+                <span className="text-xs text-[#6b7280]">Abiertos</span>
+              </div>
+              <div className="text-2xl font-semibold text-[#284b63]">
+                {metricasTickets?.abiertos ?? ticketsFiltradosPorVista.filter(t => t.estado === "abierto").length}
+              </div>
+            </div>
+            <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle size={15} className="text-red-500" />
+                <span className="text-xs text-[#6b7280]">Críticos</span>
+              </div>
+              <div className="text-2xl font-semibold text-red-500">
+                {urgentTickets}
+              </div>
+            </div>
+            <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Clock size={15} className="text-[#353535]" />
+                <span className="text-xs text-[#6b7280]">En progreso</span>
+              </div>
+              <div className="text-2xl font-semibold text-[#353535]">
+                {metricasTickets?.en_progreso ?? ticketsFiltradosPorVista.filter(t => t.estado === "progreso").length}
+              </div>
+            </div>
+            <div className="bg-white border border-[#d9d9d9] rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle2 size={15} className="text-[#3c6e71]" />
+                <span className="text-xs text-[#6b7280]">Resueltos</span>
+              </div>
+              <div className="text-2xl font-semibold text-[#3c6e71]">
+                {metricasTickets?.resueltos ?? ticketsFiltradosPorVista.filter(t => t.estado === "resuelto").length}
+              </div>
+            </div>
+          </div>
 
+          {/* Alertas */}
+          {vencidos > 0 && (
+            <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+              <AlertTriangle size={18} className="text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-red-900">
+                  {vencidos} tickets han excedido su SLA
+                </div>
+                <div className="text-xs text-red-700 mt-0.5">
+                  {proximosVencer} tickets próximos a vencer
+                </div>
+              </div>
+            </div>
+          )}
+
+          {proximosVencer > 0 && vencidos === 0 && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+              <Clock size={18} className="text-amber-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <div className="text-sm font-medium text-amber-900">
+                  {proximosVencer} tickets próximos a vencer
+                </div>
+                <div className="text-xs text-amber-700 mt-0.5">
+                  Revisar asignaciones para evitar incumplimiento de SLA
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Tabla de tickets recientes */}
           {ticketsFiltradosPorVista.length === 0 ? (
             <div className="border border-[#d9d9d9] rounded-xl mb-8">
               <EmptyState
-                icon={Ticket}
+                icon={AlertCircle}
                 title={vistaPropia ? "No tienes tickets asignados" : "No hay tickets"}
                 description={
                   vistaPropia
                     ? "No tienes tickets asignados actualmente."
-                    : "No hay tickets que coincidan con los filtros seleccionados."
+                    : "No hay tickets en el sistema."
                 }
-                actionLabel={vistaPropia ? undefined : "Limpiar filtros"}
-                onAction={vistaPropia ? undefined : () => setFilter("all")}
               />
             </div>
           ) : (
             <TicketsTable
               tickets={ticketsFiltradosPorVista}
-              filter={filter}
+              filter=""
               onTicketClick={handleTicketClick}
             />
           )}
-
-          {/* <WeeklyChart data={mockWeeklyChart} /> */}
         </>
       )}
     </div>

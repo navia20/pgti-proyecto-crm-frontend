@@ -3,6 +3,7 @@ import { TicketCliente } from "../../lib/types/cliente.types";
 
 interface TicketsListProps {
   tickets: TicketCliente[];
+  onTicketClick?: (ticketId: string) => void;
 }
 
 const statusLabel: Record<string, string> = {
@@ -18,11 +19,22 @@ const priorityLabel: Record<string, string> = {
   baja: "Baja",
 };
 
-export default function TicketsList({ tickets }: TicketsListProps) {
+export default function TicketsList({ tickets, onTicketClick }: TicketsListProps) {
   return (
     <div className="tickets-list">
       {tickets.map((ticket) => (
-        <div key={ticket.id} className="tickets-list__item">
+        <div
+          key={ticket.id}
+          className="tickets-list__item"
+          onClick={() => onTicketClick?.(ticket.id)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              onTicketClick?.(ticket.id);
+            }
+          }}
+        >
           <div className="tickets-list__top">
             <span className="tickets-list__title">{ticket.title}</span>
             <div className="tickets-list__badges">

@@ -1,14 +1,16 @@
 "use client";
 
 import "./TicketDetail.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Circle, AlertCircle, User,
-  Clock, Tag, BookOpen, Link, ChevronDown,
+  Clock, Tag, Link, ChevronDown, Share2, Check,
 } from "lucide-react";
-import { TicketDetalle, TicketActivity, ArticuloKB, Interaccion, TicketEstado } from "../../lib/types/ticket.types";
-import { mockArticulosKB } from "../../lib/mocks/tickets.mock";
+import { enlacesApi } from "../../lib/api/enlaces.api";
+import { FRONTEND_URL } from "../../lib/api/config";
+import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal } from "../../lib/types/ticket.types";
 import { ticketsApi } from "../../lib/api/tickets.api";
+import { interaccionesApi } from "../../lib/api/interacciones.api";
 import MessageThread from "./MessageThread";
 import ActivityPanel from "./ActivityPanel";
 
@@ -38,104 +40,49 @@ const estadoClass: Record<string, string> = {
   cerrado: "badge-status-detail--resolved",
 };
 
-const prioridadClass: Record<string, string> = {
-  critica: "badge-priority-detail--urgent",
-  alta: "badge-priority-detail--high",
-  media: "badge-priority-detail--medium",
-  baja: "badge-priority-detail--low",
-};
-
-// Estados disponibles según rol
 const estadosAgente: TicketEstado[] = ["abierto", "progreso", "resuelto"];
 const estadosAdmin: TicketEstado[] = ["abierto", "progreso", "resuelto", "cerrado"];
 
-// Componente panel KB
-function PanelKB({ ticket }: { ticket: TicketDetalle }) {
-  const [usados, setUsados] = useState<string[]>([]);
-
-  const marcarUsado = (id: string) => {
-    setUsados((prev) => prev.includes(id) ? prev : [...prev, id]);
-  };
-
+function PanelReferencias({ ticket }: { ticket: TicketDetalle }) {
   return (
-    <div className="ticket-kb">
-      <div className="ticket-kb__header">
-        <div className="ticket-kb__title">
-          <BookOpen size={13} style={{ display: "inline", marginRight: "0.375rem" }} />
-          Base de Conocimiento
-        </div>
-        <div className="ticket-kb__subtitle">
-          Artículos sugeridos para este ticket
-        </div>
+    <div className="ticket-referencias">
+      <div className="ticket-referencias__title">
+        <Link size={12} style={{ display: "inline", marginRight: "0.375rem" }} />
+        Referencias Externas
       </div>
-
-      <div className="ticket-kb__list">
-        {mockArticulosKB.length === 0 ? (
-          <div className="ticket-kb__empty">
-            No hay artículos sugeridos para esta categoría
+      <div className="ticket-referencias__list">
+        {ticket.pedido_id_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Pedido</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.pedido_id_ref}
+            </span>
           </div>
-        ) : (
-          mockArticulosKB.map((articulo: ArticuloKB) => {
-            const usado = usados.includes(articulo.id);
-            return (
-              <div
-                key={articulo.id}
-                className={`ticket-kb__item ${usado ? "ticket-kb__item--used" : ""}`}
-              >
-                <div className="ticket-kb__item-category">{articulo.categoria}</div>
-                <div className="ticket-kb__item-title">{articulo.titulo}</div>
-                <div className="ticket-kb__item-actions">
-                  <button className="ticket-kb__btn">Ver</button>
-                  {!usado ? (
-                    <button
-                      className="ticket-kb__btn ticket-kb__btn--primary"
-                      onClick={() => marcarUsado(articulo.id)}
-                    >
-                      Adjuntar
-                    </button>
-                  ) : (
-                    <span className="ticket-kb__badge">✓ Adjuntado</span>
-                  )}
-                </div>
-              </div>
-            );
-          })
         )}
-      </div>
-
-      {/* Panel de enlaces externos */}
-      <div className="ticket-enlaces">
-        <div className="ticket-enlaces__title">
-          <Link size={12} style={{ display: "inline", marginRight: "0.375rem" }} />
-          Referencias Externas
-        </div>
-        <div className="ticket-enlaces__form">
-          <div className="ticket-enlaces__row">
-            <span className="ticket-enlaces__label">Pedido</span>
-            {ticket.pedido_id_ref ? (
-              <span className="ticket-enlaces__badge">
-                <Link size={10} />
-                {ticket.pedido_id_ref}
-              </span>
-            ) : (
-              <input type="text" placeholder="ped-123" className="ticket-enlaces__input" />
-            )}
+        {ticket.suscripcion_id_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Suscripción</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.suscripcion_id_ref}
+            </span>
           </div>
-          <div className="ticket-enlaces__row">
-            <span className="ticket-enlaces__label">Suscripción</span>
-            {ticket.suscripcion_id_ref ? (
-              <span className="ticket-enlaces__badge">
-                <Link size={10} />
-                {ticket.suscripcion_id_ref}
-              </span>
-            ) : (
-              <input type="text" placeholder="sus-456" className="ticket-enlaces__input" />
-            )}
+        )}
+        {ticket.salud_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Salud</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.salud_ref}
+            </span>
           </div>
-          {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && (
-            <button className="ticket-enlaces__save-btn">Guardar referencias</button>
-          )}
-        </div>
+        )}
+        {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && !ticket.salud_ref && (
+          <div className="ticket-referencias__empty">
+            Sin referencias externas
+          </div>
+        )}
       </div>
     </div>
   );
@@ -144,7 +91,11 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
 export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailProps) {
   const [interacciones, setInteracciones] = useState(ticket.interacciones);
   const [estadoActual, setEstadoActual] = useState<TicketEstado>(ticket.estado);
+  const [prioridadActual, setPrioridadActual] = useState(ticket.prioridad);
+  const [canalActual, setCanalActual] = useState(ticket.canal);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  const [generandoEnlace, setGenerandoEnlace] = useState(false);
+  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
@@ -156,7 +107,6 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
       setCambiandoEstado(true);
       await ticketsApi.actualizar(ticket.id, { estado: nuevoEstado });
       setEstadoActual(nuevoEstado);
-      // Agregar nota de sistema en actividad
       const nuevaInteraccion: Interaccion = {
         id: `sys-${Date.now()}`,
         ticket_id: ticket.id,
@@ -178,6 +128,54 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
   const estadosDisponibles = esAdmin ? estadosAdmin : estadosAgente;
 
+  const handleCambiarPrioridad = async (nuevaPrioridad: TicketPrioridad) => {
+    if (nuevaPrioridad === prioridadActual) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, { prioridad: nuevaPrioridad });
+      setPrioridadActual(nuevaPrioridad);
+    } catch (error) {
+      console.error("Error al cambiar prioridad:", error);
+    }
+  };
+
+  const handleCambiarCanal = async (nuevoCanal: TicketCanal) => {
+    if (nuevoCanal === canalActual) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, { canal: nuevoCanal });
+      setCanalActual(nuevoCanal);
+    } catch (error) {
+      console.error("Error al cambiar canal:", error);
+    }
+  };
+
+  const handleCopiarEnlace = async () => {
+    try {
+      setGenerandoEnlace(true);
+      const { url } = await enlacesApi.crear(ticket.id);
+      const fullUrl = `${FRONTEND_URL}${url}`;
+      await navigator.clipboard.writeText(fullUrl);
+      setEnlaceCopiado(true);
+      setTimeout(() => setEnlaceCopiado(false), 3000);
+    } catch (error) {
+      console.error("Error al generar enlace:", error);
+    } finally {
+      setGenerandoEnlace(false);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const nuevas = await interaccionesApi.getByTicket(ticket.id);
+        setInteracciones((prev) => {
+          if (nuevas.length !== prev.length) return nuevas;
+          return prev;
+        });
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [ticket.id]);
+
   const activityItems: TicketActivity[] = [
     {
       id: 1,
@@ -193,7 +191,6 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
   return (
     <div className="ticket-detail">
-      {/* Banner ticket cerrado */}
       {ticketCerrado && (
         <div
           style={{
@@ -231,10 +228,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
         </div>
       )}
 
-      {/* Panel izquierdo — Metadatos */}
       <aside className="ticket-detail__sidebar" style={ticketCerrado ? { paddingTop: "2.5rem" } : {}}>
-
-        {/* Estado con selector */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Circle size={12} />
@@ -291,52 +285,121 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
           )}
         </div>
 
-        {/* Prioridad */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <AlertCircle size={12} />
             Prioridad
           </div>
-          <span className={`badge-priority-detail ${prioridadClass[ticket.prioridad]}`}>
-            {prioridadLabel[ticket.prioridad]}
-          </span>
+          <div style={{ position: "relative" }}>
+            <select
+              value={prioridadActual}
+              onChange={(e) => handleCambiarPrioridad(e.target.value as TicketPrioridad)}
+              style={{
+                appearance: "none",
+                border: "1px solid #d9d9d9",
+                borderRadius: "9999px",
+                padding: "0.2rem 1.5rem 0.2rem 0.6rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: prioridadActual === "critica" ? "#ffffff"
+                  : prioridadActual === "alta" ? "#ffffff"
+                  : prioridadActual === "media" ? "#ffffff"
+                  : "#6b7280",
+                backgroundColor: prioridadActual === "critica" ? "#ef4444"
+                  : prioridadActual === "alta" ? "#f97316"
+                  : prioridadActual === "media" ? "#eab308"
+                  : "transparent",
+                cursor: "pointer",
+                outline: "none",
+                fontFamily: "inherit",
+              }}
+            >
+              {Object.entries(prioridadLabel).map(([value, label]) => (
+                <option key={value} value={value} style={{ color: "#353535", backgroundColor: "#ffffff" }}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={10}
+              style={{
+                position: "absolute",
+                right: "0.4rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
+                color: prioridadActual === "baja" ? "#6b7280" : "#ffffff",
+              }}
+            />
+          </div>
         </div>
 
         <hr className="ticket-detail__separator" />
 
-        {/* Canal */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Tag size={12} />
             Canal
           </div>
-          <span className="ticket-detail__meta-value capitalize">{ticket.canal}</span>
+          <div style={{ position: "relative" }}>
+            <select
+              value={canalActual}
+              onChange={(e) => handleCambiarCanal(e.target.value as TicketCanal)}
+              style={{
+                appearance: "none",
+                border: "1px solid #d9d9d9",
+                borderRadius: "9999px",
+                padding: "0.2rem 1.5rem 0.2rem 0.6rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "#353535",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                outline: "none",
+                fontFamily: "inherit",
+                textTransform: "capitalize",
+              }}
+            >
+              {["chat", "email", "telefono", "app"].map((c) => (
+                <option key={c} value={c} style={{ color: "#353535", backgroundColor: "#ffffff" }}>
+                  {c === "telefono" ? "Teléfono" : c.charAt(0).toUpperCase() + c.slice(1)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={10}
+              style={{
+                position: "absolute",
+                right: "0.4rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
+                color: "#6b7280",
+              }}
+            />
+          </div>
         </div>
 
-{/* Agente */}
-<div className="ticket-detail__meta-group">
-  <div className="ticket-detail__meta-label">
-    <User size={12} />
-    Gestionado por
-  </div>
-  <div className="ticket-detail__person">
-    <div className="ticket-detail__avatar"
-      style={{ backgroundColor: "#284b63" }}
-    >
-      AS
-    </div>
-    <div className="ticket-detail__person-info">
-      <span className="ticket-detail__person-name">
-        Administrador del Sistema
-      </span>
-      <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
-        Sin módulo de usuarios activo
-      </span>
-    </div>
-  </div>
-</div>
+        <div className="ticket-detail__meta-group">
+          <div className="ticket-detail__meta-label">
+            <User size={12} />
+            Gestionado por
+          </div>
+          <div className="ticket-detail__person">
+            <div className="ticket-detail__avatar" style={{ backgroundColor: "#284b63" }}>
+              AS
+            </div>
+            <div className="ticket-detail__person-info">
+              <span className="ticket-detail__person-name">
+                Administrador del Sistema
+              </span>
+              <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
+                Sin módulo de usuarios activo
+              </span>
+            </div>
+          </div>
+        </div>
 
-        {/* Cliente */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <User size={12} />
@@ -356,7 +419,28 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
         <hr className="ticket-detail__separator" />
 
-        {/* SLA */}
+        <div className="ticket-detail__meta-group">
+          <button
+            onClick={handleCopiarEnlace}
+            disabled={generandoEnlace || enlaceCopiado}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#d9d9d9] hover:border-[#3c6e71] hover:text-[#3c6e71] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {enlaceCopiado ? (
+              <>
+                <Check size={14} className="text-green-600" />
+                <span className="text-green-600">Enlace copiado</span>
+              </>
+            ) : (
+              <>
+                <Share2 size={14} />
+                <span>Compartir con cliente</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        <hr className="ticket-detail__separator" />
+
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Clock size={12} />
@@ -366,26 +450,8 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
             {new Date(ticket.fecha_vencimiento_sla).toLocaleString("es-ES")}
           </span>
         </div>
-
-        <hr className="ticket-detail__separator" />
-
-        {/* Tags */}
-        {ticket.tags.length > 0 && (
-          <div className="ticket-detail__meta-group">
-            <div className="ticket-detail__meta-label">
-              <Tag size={12} />
-              Tags
-            </div>
-            <div className="ticket-detail__tags">
-              {ticket.tags.map((tag) => (
-                <span key={tag} className="ticket-detail__tag">{tag}</span>
-              ))}
-            </div>
-          </div>
-        )}
       </aside>
 
-      {/* Panel central — Mensajes */}
       <main className="ticket-detail__main" style={ticketCerrado ? { paddingTop: "2rem", pointerEvents: ticketCerrado && !esAdmin ? "none" : "auto", opacity: ticketCerrado ? 0.7 : 1 } : {}}>
         <MessageThread
           ticket={{ ...ticket, interacciones }}
@@ -393,9 +459,8 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
         />
       </main>
 
-      {/* Panel derecho — KB + Referencias + Actividad */}
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <PanelKB ticket={ticket} />
+        <PanelReferencias ticket={ticket} />
         <aside className="ticket-detail__activity">
           <ActivityPanel activity={activityItems} />
         </aside>
