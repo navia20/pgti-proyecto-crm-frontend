@@ -93,19 +93,24 @@ export default function TicketsPage() {
     const selectedId = sessionStorage.getItem("selectedTicketId");
     if (selectedId && !selectedTicket) {
       sessionStorage.removeItem("selectedTicketId");
-      setIsLoadingDetalle(true);
-      void ticketsApi.getById(selectedId).then((detalle) => {
-        setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, salud_ref: detalle.salud_ref, slaPercent: 0, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
-        setTicketDetalle(detalle);
-      }).catch(() => {
-        sessionStorage.removeItem("selectedTicketId");
-      }).finally(() => {
-        setIsLoadingDetalle(false);
-      });
+      void (async () => {
+        setIsLoadingDetalle(true);
+        try {
+          const detalle = await ticketsApi.getById(selectedId);
+          setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, salud_ref: detalle.salud_ref, slaPercent: 0, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
+          setTicketDetalle(detalle);
+        } catch {
+          sessionStorage.removeItem("selectedTicketId");
+        } finally {
+          setIsLoadingDetalle(false);
+        }
+      })();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
     setSelectedTicket(null);
     setTicketDetalle(null);

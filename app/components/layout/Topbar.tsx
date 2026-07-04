@@ -32,7 +32,7 @@ const allNavItems = [
 export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, setRole, esAdmin } = useRole();
+  const { setRole, esAdmin } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [clientes, setClientes] = useState<ClientePerfil[]>([]);
 

@@ -2,7 +2,7 @@
 
 import "./MessageThread.css";
 import React, { useState, useRef, useEffect } from "react";
-import { Paperclip, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import { TicketDetalle, Interaccion } from "../../lib/types/ticket.types";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 
@@ -74,7 +74,7 @@ export default function MessageThread({ ticket, onInteraccionCreada }: MessageTh
             No hay interacciones aún. Sé el primero en responder.
           </div>
         ) : (
-          ticket.interacciones.map((message: Interaccion, index: number) => {
+          ticket.interacciones.map((message: Interaccion) => {
             const autor = getAutorDisplay(message, ticket.cliente_nombre);
             const esCliente = message.autor_tipo === "cliente";
             const esSistema = message.autor_tipo === "sistema";
