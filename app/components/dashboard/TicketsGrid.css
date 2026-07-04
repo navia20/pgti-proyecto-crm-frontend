@@ -1,0 +1,115 @@
+.tickets-grid-section {
+  margin-bottom: 2.5rem;
+}
+
+.tickets-grid-section__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.tickets-grid-section__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.25rem;
+}
+
+.tickets-grid-section__subtitle {
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+}
+
+.tickets-grid-empty {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+}
+
+.tickets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+
+.tickets-grid__card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.tickets-grid__card:hover {
+  border-color: var(--card-hover-border);
+  box-shadow: 0 2px 8px var(--card-hover-shadow);
+}
+
+.tickets-grid__card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tickets-grid__card-id {
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.tickets-grid__card-asunto {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.4;
+}
+
+.tickets-grid__card-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tickets-grid__card-canal {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+
+.tickets-grid__card-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.tickets-grid__card-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+}
+
+.tickets-grid__card-label {
+  color: var(--muted-foreground);
+}
+
+.tickets-grid__card-value {
+  color: var(--foreground);
+}
+
+.tickets-grid__card-sla {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--card-border);
+  font-size: 0.8rem;
+}

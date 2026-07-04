@@ -34,6 +34,8 @@ const initialForm: CrearTicketForm = {
   descripcion: "",
   pedido_id_ref: "",
   suscripcion_id_ref: "",
+  pago_id_ref: "",
+  salud_ref: "",
 };
 
 const initialClienteForm = {
@@ -384,7 +386,7 @@ export default function CrearTicketModal({
           {/* Descripción */}
           <div className="modal__field">
             <label className="modal__label modal__label--required">
-              Descripción
+              Mensaje del cliente o sistema
             </label>
             <textarea
               name="descripcion"
@@ -393,6 +395,9 @@ export default function CrearTicketModal({
               placeholder="Describe el problema en detalle..."
               className="modal__textarea"
             />
+            <span className="modal__hint">
+              Mensaje que el cliente reportó o que el sistema generó automáticamente
+            </span>
           </div>
 
           {/* Campos opcionales */}
@@ -434,6 +439,36 @@ export default function CrearTicketModal({
                     />
                     <span className="modal__hint">
                       Referencia al Proyecto 10 (Suscripciones)
+                    </span>
+                  </div>
+                </div>
+                <div className="modal__field-row">
+                  <div className="modal__field">
+                    <label className="modal__label">ID Pago</label>
+                    <input
+                      type="text"
+                      name="pago_id_ref"
+                      value={form.pago_id_ref}
+                      onChange={handleChange}
+                      placeholder="pago-789"
+                      className="modal__input"
+                    />
+                    <span className="modal__hint">
+                      Referencia al Proyecto 4 (Pagos)
+                    </span>
+                  </div>
+                  <div className="modal__field">
+                    <label className="modal__label">ID Salud</label>
+                    <input
+                      type="text"
+                      name="salud_ref"
+                      value={form.salud_ref}
+                      onChange={handleChange}
+                      placeholder="sal-012"
+                      className="modal__input"
+                    />
+                    <span className="modal__hint">
+                      Referencia al Proyecto 1 (Salud)
                     </span>
                   </div>
                 </div>

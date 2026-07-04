@@ -35,8 +35,10 @@ export default function ClienteTicketCard({
   const [reply, setReply] = useState("");
   const [enviando, setEnviando] = useState(false);
 
+  const isCompleted = ticket.estado === "resuelto" || ticket.estado === "cerrado";
   const slaColor =
-    ticket.slaPercent >= 100 ? "#ef4444"
+    isCompleted ? "#22c55e"
+    : ticket.slaPercent >= 100 ? "#ef4444"
     : ticket.slaPercent >= 75 ? "#eab308"
     : "#22c55e";
 
@@ -91,7 +93,8 @@ export default function ClienteTicketCard({
             style={{ backgroundColor: slaColor }}
           />
           <span style={{ color: slaColor }}>
-            {ticket.slaPercent >= 100 ? "SLA vencido"
+            {isCompleted ? "Completado"
+            : ticket.slaPercent >= 100 ? "SLA vencido"
             : ticket.slaPercent >= 75 ? "SLA en riesgo"
             : "SLA OK"}
           </span>

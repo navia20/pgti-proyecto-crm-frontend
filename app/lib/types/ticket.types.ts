@@ -15,6 +15,7 @@ export interface Ticket {
   fecha_vencimiento_sla: string;
   pedido_id_ref: string | null;
   suscripcion_id_ref: string | null;
+  pago_id_ref: string | null;
   salud_ref: string | null;
   slaPercent: number;
   agente_nombre: string;
@@ -69,6 +70,8 @@ export interface CrearTicketForm {
   descripcion: string;
   pedido_id_ref: string;
   suscripcion_id_ref: string;
+  pago_id_ref: string;
+  salud_ref: string;
 }
 
 // Aliases para compatibilidad

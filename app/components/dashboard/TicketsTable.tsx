@@ -8,7 +8,15 @@ interface TicketsTableProps {
   tickets: Ticket[];
   filter: string;
   onTicketClick?: (ticket: Ticket) => void;
+  esAdmin?: boolean;
+  onAsignarAgente?: (ticketId: string, agenteId: string | null) => void;
 }
+
+const AGENTES_CONOCIDOS = [
+  { id: "", nombre: "Sin asignar" },
+  { id: "p7.admin@ucn.cl", nombre: "Admin CRM" },
+  { id: "p7.agent@ucn.cl", nombre: "Agente CRM" },
+];
 
 function getPrioridadLabel(prioridad: string): string {
   const labels: Record<string, string> = {
@@ -59,7 +67,7 @@ function applyFilter(tickets: Ticket[], filter: string): Ticket[] {
   return tickets;
 }
 
-export default function TicketsTable({ tickets, filter, onTicketClick }: TicketsTableProps) {
+export default function TicketsTable({ tickets, filter, onTicketClick, esAdmin, onAsignarAgente }: TicketsTableProps) {
   const filtered = applyFilter(tickets, filter);
 
   const getFilterLabel = (): string => {
@@ -146,19 +154,44 @@ export default function TicketsTable({ tickets, filter, onTicketClick }: Tickets
                         {getEstadoLabel(ticket.estado)}
                       </span>
                     </td>
-                    <td>
-                      <span className="ticket-agent">{ticket.agente_nombre}</span>
+                    <td className="td-agente">
+                      {esAdmin ? (
+                        <select
+                          value={ticket.agente_id ?? ""}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            onAsignarAgente?.(ticket.id, e.target.value || null);
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="agent-select"
+                        >
+                          {AGENTES_CONOCIDOS.map((agente) => (
+                            <option key={agente.id} value={agente.id}>
+                              {agente.nombre}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="ticket-agent">{ticket.agente_nombre}</span>
+                      )}
                     </td>
                     <td>
                       <span className="ticket-agent">{ticket.cliente_nombre}</span>
                     </td>
                     <td>
-                      <div className="sla-cell">
-                        <div className={`sla-dot sla-dot--${slaStatus}`} />
-                        <span className={`sla-text--${slaStatus}`}>
-                          {getSlaLabel(ticket.slaPercent)}
-                        </span>
-                      </div>
+                      {(ticket.estado === "resuelto" || ticket.estado === "cerrado") ? (
+                        <div className="sla-cell">
+                          <div className="sla-dot sla-dot--ok" />
+                          <span className="sla-text--ok">Completado</span>
+                        </div>
+                      ) : (
+                        <div className="sla-cell">
+                          <div className={`sla-dot sla-dot--${slaStatus}`} />
+                          <span className={`sla-text--${slaStatus}`}>
+                            {getSlaLabel(ticket.slaPercent)}
+                          </span>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );

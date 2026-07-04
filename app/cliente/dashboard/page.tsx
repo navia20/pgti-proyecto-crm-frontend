@@ -101,6 +101,8 @@ export default function ClienteDashboardPage() {
         descripcion: form.descripcion,
         pedido_id_ref: "",
         suscripcion_id_ref: "",
+        pago_id_ref: "",
+        salud_ref: "",
       });
       if (form.descripcion.trim() && ticket.id) {
         await interaccionesApi.crear({
@@ -261,7 +263,7 @@ export default function ClienteDashboardPage() {
 
       {modalOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && setModalOpen(false)}
         >
           <div className="bg-white rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">

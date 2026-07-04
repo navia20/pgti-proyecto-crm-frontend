@@ -4,8 +4,9 @@ import React, { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Ticket } from "lucide-react";
 import TicketDetail from "../../components/tickets/TicketDetail";
 import TicketsTable from "../../components/dashboard/TicketsTable";
+import TicketsGrid from "../../components/dashboard/TicketsGrid";
 import EmptyState from "../../components/ui/EmptyState";
-import FiltersBar, { TicketFilters } from "../../components/ui/FiltersBar";
+import FiltersBar, { TicketFilters, ViewMode } from "../../components/ui/FiltersBar";
 import { SkeletonTable } from "../../components/ui/Skeleton";
 import { mockTicketDetalle } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
@@ -21,6 +22,7 @@ const defaultFilters: TicketFilters = {
   estado: "",
   prioridad: "",
   canal: "",
+  mis_tickets: false,
 };
 
 export default function TicketsPage() {
@@ -34,6 +36,7 @@ export default function TicketsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -48,7 +51,7 @@ export default function TicketsPage() {
         canal: filters.canal || undefined,
         search: filters.search || undefined,
         referencia: filters.referencia || undefined,
-        agente_id: !esAdmin ? userEmail : undefined,
+        agente_id: filters.mis_tickets ? userEmail : (!esAdmin ? userEmail : undefined),
       });
       setTickets(result.data);
       setTotal(result.total);
@@ -83,6 +86,21 @@ export default function TicketsPage() {
     });
   };
 
+  const handleAsignarAgente = async (ticketId: string, agenteId: string | null) => {
+    try {
+      await ticketsApi.actualizar(ticketId, { agente_id: agenteId || undefined });
+      setTickets((prev) =>
+        prev.map((t) =>
+          t.id === ticketId
+            ? { ...t, agente_id: agenteId, agente_nombre: agenteId ? (agenteId === "p7.admin@ucn.cl" ? "Admin CRM" : "Agente CRM") : "Sin asignar" }
+            : t
+        )
+      );
+    } catch (error) {
+      console.error("Error al asignar agente:", error);
+    }
+  };
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTickets();
@@ -99,7 +117,7 @@ export default function TicketsPage() {
             ticketsApi.getById(selectedId),
             interaccionesApi.getByTicket(selectedId),
           ]);
-          setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, salud_ref: detalle.salud_ref, slaPercent: 0, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
+          setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, pago_id_ref: detalle.pago_id_ref, salud_ref: detalle.salud_ref, slaPercent: detalle.slaPercent, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
           setTicketDetalle({ ...detalle, interacciones });
         } catch {
           sessionStorage.removeItem("selectedTicketId");
@@ -166,9 +184,31 @@ export default function TicketsPage() {
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {esAdmin ? "Todos los tickets" : "Mis tickets asignados"} — {total} en total
+            {filters.mis_tickets ? "Mis tickets asignados" : "Todos los tickets"} — {total} en total
           </p>
         </div>
+        {esAdmin && (
+          <div className="flex items-center gap-3">
+            <span className={`text-sm ${!filters.mis_tickets ? "text-[#353535] font-medium" : "text-[#6b7280]"}`}>
+              Todos
+            </span>
+            <button
+              onClick={() => handleFilterChange({ ...filters, mis_tickets: !filters.mis_tickets })}
+              className={`relative w-12 h-6 rounded-full transition-colors ${
+                filters.mis_tickets ? "bg-[#3c6e71]" : "bg-[#d9d9d9]"
+              }`}
+            >
+              <div
+                className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                  filters.mis_tickets ? "translate-x-6" : "translate-x-0.5"
+                }`}
+              />
+            </button>
+            <span className={`text-sm ${filters.mis_tickets ? "text-[#353535] font-medium" : "text-[#6b7280]"}`}>
+              Mis tickets
+            </span>
+          </div>
+        )}
       </div>
 
       {error && (
@@ -189,6 +229,10 @@ export default function TicketsPage() {
             total={total}
             onPageChange={setPage}
             pageSize={PAGE_SIZE}
+            esAdmin={esAdmin}
+            userEmail={userEmail}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
 
           {tickets.length === 0 ? (
@@ -204,11 +248,21 @@ export default function TicketsPage() {
                 }}
               />
             </div>
+          ) : viewMode === "grid" ? (
+            <TicketsGrid
+              tickets={tickets}
+              filter=""
+              onTicketClick={handleTicketClick}
+              esAdmin={esAdmin}
+              onAsignarAgente={handleAsignarAgente}
+            />
           ) : (
             <TicketsTable
               tickets={tickets}
               filter=""
               onTicketClick={handleTicketClick}
+              esAdmin={esAdmin}
+              onAsignarAgente={handleAsignarAgente}
             />
           )}
         </>

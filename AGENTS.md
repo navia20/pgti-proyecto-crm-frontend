@@ -29,9 +29,11 @@ Sistema CRM con tickets, clientes, dashboard y módulo de soporte con analítica
 - Crítica: 4h, Alta: 8h, Media: 24h, Baja: 48h
 
 ## Guías de Integración
-- `docs/guia-integracion-pedidos.md` v1.2
+- `docs/guia-integracion-externa.md` v1.0 — Documento único para todos los grupos
+- `docs/guia-integracion-pedidos.md` v1.3
 - `docs/guia-integracion-suscripciones.md` v1.2
 - `docs/guia-integracion-salud.md` v1.1
+- `docs/guia-integracion-pagos.md` v1.1
 
 ## Comandos de Verificación
 ```bash

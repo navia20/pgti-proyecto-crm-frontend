@@ -60,7 +60,7 @@ export default function Topbar() {
       if (form.descripcion.trim() && ticket.id) {
         await interaccionesApi.crear({
           ticket_id: ticket.id,
-          autor_tipo: "cliente",
+          autor_tipo: "sistema",
           autor_id: "00000000-0000-0000-0000-000000000001",
           contenido: form.descripcion,
           es_nota_interna: false,

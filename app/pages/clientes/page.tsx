@@ -501,7 +501,7 @@ export default function ClientesPage() {
         {/* Modal Crear / Editar */}
         {(modalType === "create" || modalType === "edit") && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={(e) => e.target === e.currentTarget && closeModal()}
           >
             <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">
@@ -662,7 +662,7 @@ export default function ClientesPage() {
         {/* Modal Eliminar */}
         {modalType === "delete" && (
           <div
-            className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
             onClick={(e) => e.target === e.currentTarget && closeModal()}
           >
             <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
@@ -840,7 +840,7 @@ export default function ClientesPage() {
       {/* Modal Crear Cliente (desde la vista lista) */}
       {modalType === "create" && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
           onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
           <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl">

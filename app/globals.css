@@ -35,6 +35,58 @@
   --sidebar-bg: #353535;
   --sidebar-text: #ffffff;
   --sidebar-accent: #3c6e71;
+
+  /* Topbar */
+  --topbar-bg: #284b63;
+  --topbar-border: #1e3a4f;
+  --topbar-text: #d9d9d9;
+  --topbar-brand-text: #ffffff;
+  --topbar-brand-sub: #d9d9d9;
+  --topbar-accent: #3c6e71;
+  --topbar-hover: rgba(255, 255, 255, 0.08);
+
+  /* Tabla */
+  --table-header-bg: #284b63;
+  --table-header-text: #ffffff;
+  --table-row-bg: #ffffff;
+  --table-row-hover: #f9fafb;
+  --table-border: #d9d9d9;
+  --table-text: #353535;
+  --table-text-muted: #6b7280;
+
+  /* Tarjeta / Card */
+  --card-bg: #ffffff;
+  --card-border: #d9d9d9;
+  --card-hover-border: #3c6e71;
+  --card-hover-shadow: rgba(60, 110, 113, 0.1);
+
+  /* Badge abierto */
+  --badge-abierto-bg: transparent;
+  --badge-abierto-text: #284b63;
+  --badge-abierto-border: #284b63;
+
+  /* Badge prioridad */
+  --badge-critica-bg: #ef4444;
+  --badge-critica-text: #ffffff;
+  --badge-alta-bg: #353535;
+  --badge-alta-text: #ffffff;
+  --badge-media-bg: #d9d9d9;
+  --badge-media-text: #353535;
+  --badge-baja-bg: transparent;
+  --badge-baja-text: #6b7280;
+  --badge-baja-border: #d9d9d9;
+
+  /* Input / Select */
+  --input-bg: #ffffff;
+  --input-border: #d9d9d9;
+  --input-text: #353535;
+
+  /* Modal */
+  --modal-overlay: rgba(0, 0, 0, 0.5);
+  --modal-bg: #ffffff;
+
+  /* Filtros */
+  --filters-bg: #ffffff;
 }
 
 body {

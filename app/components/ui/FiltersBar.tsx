@@ -1,7 +1,9 @@
 "use client";
 
 import React from "react";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react";
+
+export type ViewMode = "table" | "grid";
 
 export interface TicketFilters {
   search: string;
@@ -9,6 +11,7 @@ export interface TicketFilters {
   estado: string;
   prioridad: string;
   canal: string;
+  mis_tickets: boolean;
 }
 
 interface FiltersBarProps {
@@ -19,6 +22,10 @@ interface FiltersBarProps {
   total: number;
   onPageChange: (page: number) => void;
   pageSize: number;
+  esAdmin?: boolean;
+  userEmail?: string;
+  viewMode?: ViewMode;
+  onViewModeChange?: (mode: ViewMode) => void;
 }
 
 const referenciaOptions = [
@@ -27,6 +34,7 @@ const referenciaOptions = [
   { value: "pedido", label: "Pedidos" },
   { value: "suscripcion", label: "Suscripciones" },
   { value: "salud", label: "Salud" },
+  { value: "pago", label: "Pagos" },
 ];
 
 const estadoOptions = [
@@ -90,6 +98,8 @@ export default function FiltersBar({
   total,
   onPageChange,
   pageSize,
+  viewMode = "table",
+  onViewModeChange,
 }: FiltersBarProps) {
   const handleSearchChange = (value: string) => {
     onFilterChange({ ...filters, search: value });
@@ -142,6 +152,32 @@ export default function FiltersBar({
           onChange={(v) => handleFilterChange("canal", v)}
           options={canalOptions}
         />
+        {onViewModeChange && (
+          <div className="flex items-center gap-1 ml-auto">
+            <button
+              onClick={() => onViewModeChange("table")}
+              className={`p-1.5 rounded-lg border transition-colors ${
+                viewMode === "table"
+                  ? "border-[#3c6e71] text-[#3c6e71] bg-[#f0f7f7]"
+                  : "border-[#d9d9d9] text-[#6b7280] hover:border-[#3c6e71] hover:text-[#3c6e71]"
+              }`}
+              title="Vista tabla"
+            >
+              <List size={14} />
+            </button>
+            <button
+              onClick={() => onViewModeChange("grid")}
+              className={`p-1.5 rounded-lg border transition-colors ${
+                viewMode === "grid"
+                  ? "border-[#3c6e71] text-[#3c6e71] bg-[#f0f7f7]"
+                  : "border-[#d9d9d9] text-[#6b7280] hover:border-[#3c6e71] hover:text-[#3c6e71]"
+              }`}
+              title="Vista cuadrícula"
+            >
+              <LayoutGrid size={14} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Fila 3: Paginación */}

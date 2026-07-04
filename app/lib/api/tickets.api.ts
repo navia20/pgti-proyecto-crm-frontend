@@ -9,6 +9,11 @@ const SLA_HOURS: Record<TicketPrioridad, number> = {
   baja: 48,
 };
 
+const AGENTES_CONOCIDOS: Record<string, string> = {
+  "p7.admin@ucn.cl": "Admin CRM",
+  "p7.agent@ucn.cl": "Agente CRM",
+};
+
 function calcularSlaPercent(fechaVencimiento: string, prioridad: TicketPrioridad): number {
   const ahora = Date.now();
   const vencimiento = new Date(fechaVencimiento).getTime();
@@ -33,8 +38,9 @@ function mapTicket(data: Record<string, unknown>): Ticket {
     pedido_id_ref: (data.pedido_id_ref as string) ?? null,
     suscripcion_id_ref: (data.suscripcion_id_ref as string) ?? null,
     salud_ref: (data.salud_ref as string) ?? null,
+    pago_id_ref: (data.pago_id_ref as string) ?? null,
     slaPercent: calcularSlaPercent(data.fecha_vencimiento_sla as string, prioridad),
-    agente_nombre: "Administrador del Sistema",
+    agente_nombre: data.agente_id ? (AGENTES_CONOCIDOS[data.agente_id as string] ?? "Agente") : "Sin asignar",
     cliente_nombre: (data.cliente_nombre as string) ?? `Cliente ${data.cliente_id}`,
     resolucion: (data.resolucion as string) ?? undefined,
   };
@@ -95,6 +101,8 @@ export const ticketsApi = {
       cliente_id: form.cliente_id,
       pedido_id_ref: form.pedido_id_ref || undefined,
       suscripcion_id_ref: form.suscripcion_id_ref || undefined,
+      pago_id_ref: form.pago_id_ref || undefined,
+      salud_ref: form.salud_ref || undefined,
       descripcion: form.descripcion || undefined,
     };
     const res = await authFetch(API_ROUTES.tickets, {

@@ -83,7 +83,16 @@ function PanelReferencias({ ticket }: { ticket: TicketDetalle }) {
             </span>
           </div>
         )}
-        {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && !ticket.salud_ref && (
+        {ticket.pago_id_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Pago</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.pago_id_ref}
+            </span>
+          </div>
+        )}
+        {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && !ticket.salud_ref && !ticket.pago_id_ref && (
           <div className="ticket-referencias__empty">
             Sin referencias externas
           </div>
@@ -582,7 +591,9 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
             Vencimiento SLA
           </div>
           <span className="ticket-detail__meta-value">
-            {new Date(ticket.fecha_vencimiento_sla).toLocaleString("es-ES")}
+            {(ticket.estado === "resuelto" || ticket.estado === "cerrado")
+              ? "Completado"
+              : new Date(ticket.fecha_vencimiento_sla).toLocaleString("es-ES")}
           </span>
         </div>
       </aside>
