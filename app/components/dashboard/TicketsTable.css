@@ -30,6 +30,7 @@
 .tickets-table-wrapper table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 
 .tickets-table-wrapper thead tr {
@@ -40,10 +41,21 @@
   color: #ffffff;
   font-size: 0.8rem;
   font-weight: 500;
-  padding: 0.875rem 1rem;
+  padding: 0.875rem 0.75rem;
   text-align: left;
   letter-spacing: 0.03em;
+  white-space: nowrap;
+  overflow: hidden;
 }
+
+.tickets-table-wrapper thead th:nth-child(1) { width: 90px; }
+.tickets-table-wrapper thead th:nth-child(2) { width: auto; }
+.tickets-table-wrapper thead th:nth-child(3) { width: 80px; }
+.tickets-table-wrapper thead th:nth-child(4) { width: 85px; }
+.tickets-table-wrapper thead th:nth-child(5) { width: 90px; }
+.tickets-table-wrapper thead th:nth-child(6) { width: 120px; }
+.tickets-table-wrapper thead th:nth-child(7) { width: 110px; }
+.tickets-table-wrapper thead th:nth-child(8) { width: 150px; }
 
 .tickets-table-wrapper thead th:last-child {
   text-align: right;
@@ -64,24 +76,30 @@
 }
 
 .tickets-table-wrapper tbody td {
-  padding: 0.875rem 1rem;
-  font-size: 0.875rem;
+  padding: 0.75rem 0.75rem;
+  font-size: 0.8rem;
   color: #353535;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .ticket-id {
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #6b7280;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .ticket-title {
   color: #353535;
   font-weight: 400;
-  max-width: 280px;
-  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
 }
 
 .ticket-agent {
@@ -165,6 +183,7 @@
   align-items: center;
   justify-content: flex-end;
   gap: 0.4rem;
+  white-space: nowrap;
 }
 
 .sla-dot {

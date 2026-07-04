@@ -31,15 +31,18 @@ function getEstadoLabel(estado: string): string {
 }
 
 function getSlaStatus(percent: number): SlaStatus {
-  if (percent >= 100) return "critical";
-  if (percent >= 75) return "warning";
+  const p = Math.max(0, percent);
+  if (p >= 100) return "critical";
+  if (p >= 75) return "warning";
   return "ok";
 }
 
 function getSlaLabel(percent: number): string {
-  if (percent >= 100) return `${percent}% — Vencido`;
-  if (percent >= 75) return `${percent}% — En riesgo`;
-  return `${percent}%`;
+  const p = Math.max(0, percent);
+  if (p >= 100) return `${p}% — Vencido`;
+  if (p >= 75) return `${p}% — En riesgo`;
+  if (percent < 0) return `${p}%`;
+  return `${p}%`;
 }
 
 function applyFilter(tickets: Ticket[], filter: string): Ticket[] {
@@ -125,7 +128,7 @@ export default function TicketsTable({ tickets, filter, onTicketClick }: Tickets
                     style={{ cursor: onTicketClick ? "pointer" : "default" }}
                   >
                     <td>
-                      <span className="ticket-id">{ticket.id}</span>
+                      <span className="ticket-id" title={ticket.id}>{ticket.id.slice(0, 8)}</span>
                     </td>
                     <td>
                       <span className="ticket-title">{ticket.asunto}</span>

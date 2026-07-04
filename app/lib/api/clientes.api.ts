@@ -45,6 +45,24 @@ export const clientesApi = {
     return mapCliente(data);
   },
 
+  actualizar: async (id: number, cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
+    const res = await fetch(API_ROUTES.clienteById(id), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cliente),
+    });
+    if (!res.ok) throw new Error("Error al actualizar cliente");
+    const data = await res.json();
+    return mapCliente(data);
+  },
+
+  eliminar: async (id: number): Promise<void> => {
+    const res = await fetch(API_ROUTES.clienteById(id), {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error("Error al eliminar cliente");
+  },
+
   getDuplicados: async (threshold = 50) => {
     const url = `${API_ROUTES.clientesDuplicados}?threshold=${threshold}`;
     const res = await authFetch(url);

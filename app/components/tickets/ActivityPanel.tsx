@@ -59,7 +59,7 @@ export default function ActivityPanel({ activity }: ActivityPanelProps) {
             <ActivityIcon type={item.type} />
             <div className="activity-panel__body">
               <ActivityText item={item} />
-              <div className="activity-panel__time">{item.timestamp}</div>
+              <div className="activity-panel__time">{new Date(item.timestamp).toLocaleString("es-ES")}</div>
             </div>
           </div>
         ))}

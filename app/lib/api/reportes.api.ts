@@ -29,6 +29,26 @@ export interface MetricasFuente {
   total: number;
 }
 
+export interface TrendData {
+  fecha: string;
+  abiertos: number;
+  cerrados: number;
+  resueltos: number;
+}
+
+export interface MetricasPrioridad {
+  critica: number;
+  alta: number;
+  media: number;
+  baja: number;
+}
+
+export interface MetricasInteraccionesTipo {
+  total: number;
+  por_tipo: { cliente: number; agente: number; sistema: number };
+  notas_internas: number;
+}
+
 export const reportesApi = {
   getMetricasTickets: async (): Promise<MetricasTickets> => {
     const res = await authFetch(`${API_ROUTES.reportes}/metricas/tickets`);
@@ -42,7 +62,7 @@ export const reportesApi = {
     return res.json();
   },
 
-  getMetricasPrioridad: async () => {
+  getMetricasPrioridad: async (): Promise<MetricasPrioridad> => {
     const res = await authFetch(`${API_ROUTES.reportes}/metricas/prioridad`);
     if (!res.ok) throw new Error("Error al obtener métricas de prioridad");
     return res.json();
@@ -65,6 +85,18 @@ export const reportesApi = {
   getMetricasFuente: async (): Promise<MetricasFuente> => {
     const res = await authFetch(`${API_ROUTES.reportes}/metricas/fuente`);
     if (!res.ok) throw new Error("Error al obtener métricas por fuente");
+    return res.json();
+  },
+
+  getTendencia: async (dias: number = 7): Promise<TrendData[]> => {
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/tendencia?dias=${dias}`);
+    if (!res.ok) throw new Error("Error al obtener tendencia");
+    return res.json();
+  },
+
+  getMetricasInteraccionesTipo: async (): Promise<MetricasInteraccionesTipo> => {
+    const res = await authFetch(`${API_ROUTES.reportes}/metricas/interacciones-tipo`);
+    if (!res.ok) throw new Error("Error al obtener métricas de interacciones");
     return res.json();
   },
 };

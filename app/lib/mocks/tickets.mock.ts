@@ -1,4 +1,4 @@
-import { Ticket, TicketDetalle, WeeklyChartData, ArticuloKB } from "../types/ticket.types";
+import { Ticket, TicketDetalle, WeeklyChartData } from "../types/ticket.types";
 
 export const mockTickets: Ticket[] = [
   {
@@ -12,6 +12,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-09T10:00:00Z",
     pedido_id_ref: null,
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 110,
     agente_nombre: "Sin asignar",
     cliente_nombre: "María González",
@@ -27,6 +28,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-10T14:00:00Z",
     pedido_id_ref: "ped-123",
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 40,
     agente_nombre: "María García",
     cliente_nombre: "Carlos Rodríguez",
@@ -42,6 +44,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-10T16:00:00Z",
     pedido_id_ref: null,
     suscripcion_id_ref: "sus-456",
+    salud_ref: null,
     slaPercent: 75,
     agente_nombre: "Carlos Ruiz",
     cliente_nombre: "Ana Martínez",
@@ -57,6 +60,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-15T10:00:00Z",
     pedido_id_ref: null,
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 20,
     agente_nombre: "Sin asignar",
     cliente_nombre: "María González",
@@ -72,6 +76,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-09T08:00:00Z",
     pedido_id_ref: "ped-789",
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 95,
     agente_nombre: "Ana López",
     cliente_nombre: "Pedro Sánchez",
@@ -87,6 +92,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-12T10:00:00Z",
     pedido_id_ref: null,
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 50,
     agente_nombre: "Sin asignar",
     cliente_nombre: "Carlos Rodríguez",
@@ -102,6 +108,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-11T10:00:00Z",
     pedido_id_ref: null,
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 78,
     agente_nombre: "Sin asignar",
     cliente_nombre: "Ana Martínez",
@@ -117,6 +124,7 @@ export const mockTickets: Ticket[] = [
     fecha_vencimiento_sla: "2026-05-08T10:00:00Z",
     pedido_id_ref: null,
     suscripcion_id_ref: null,
+    salud_ref: null,
     slaPercent: 30,
     agente_nombre: "Pedro Martínez",
     cliente_nombre: "Pedro Sánchez",
@@ -134,10 +142,10 @@ export const mockTicketDetalle: TicketDetalle = {
   fecha_vencimiento_sla: "2026-05-09T10:00:00Z",
   pedido_id_ref: null,
   suscripcion_id_ref: null,
+  salud_ref: null,
   slaPercent: 110,
   agente_nombre: "Sin asignar",
   cliente_nombre: "María González",
-  tags: ["auth", "backend", "urgente"],
   interacciones: [
     {
       id: "int-001",
@@ -173,29 +181,7 @@ export const mockTicketDetalle: TicketDetalle = {
       autor_iniciales: "SI",
     },
   ],
-  articulos_kb: [],
 };
-
-export const mockArticulosKB: ArticuloKB[] = [
-  {
-    id: "kb-001",
-    titulo: "Cómo restablecer tokens JWT expirados",
-    contenido: "Guía paso a paso para restablecer tokens de autenticación...",
-    categoria: "Autenticación",
-  },
-  {
-    id: "kb-002",
-    titulo: "Solución a errores 500 en endpoints",
-    contenido: "Diagnóstico y resolución de errores internos del servidor...",
-    categoria: "Backend",
-  },
-  {
-    id: "kb-003",
-    titulo: "Configuración de SSL en servidores",
-    contenido: "Pasos para configurar certificados SSL correctamente...",
-    categoria: "Infrastructure",
-  },
-];
 
 export const mockWeeklyChart: WeeklyChartData[] = [
   { day: "Lun", tickets: 24 },

@@ -1,88 +1,122 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { ArrowLeft, Eye, Ticket } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, Ticket } from "lucide-react";
 import TicketDetail from "../../components/tickets/TicketDetail";
+import TicketsTable from "../../components/dashboard/TicketsTable";
 import EmptyState from "../../components/ui/EmptyState";
+import FiltersBar, { TicketFilters } from "../../components/ui/FiltersBar";
 import { SkeletonTable } from "../../components/ui/Skeleton";
-import { mockTickets, mockTicketDetalle } from "../../lib/mocks/tickets.mock";
+import { mockTicketDetalle } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
+import { useRole } from "../../lib/context/RoleContext";
 
-const esAdmin = true; // TODO: reemplazar con auth real
+const AGENTE_ID = "00000000-0000-0000-0000-000000000001";
+const PAGE_SIZE = 15;
 
-function getPrioridadLabel(prioridad: string) {
-  const map: Record<string, string> = {
-    critica: "Crítica", alta: "Alta", media: "Media", baja: "Baja",
-  };
-  return map[prioridad] ?? prioridad;
-}
-
-function getEstadoLabel(estado: string) {
-  const map: Record<string, string> = {
-    abierto: "Abierto",
-    progreso: "En progreso",
-    resuelto: "Resuelto",
-    cerrado: "Cerrado",
-  };
-  return map[estado] ?? estado;
-}
+const defaultFilters: TicketFilters = {
+  search: "",
+  referencia: "",
+  estado: "",
+  prioridad: "",
+  canal: "",
+};
 
 export default function TicketsPage() {
-  const [tickets, setTickets] = useState<TicketType[]>(mockTickets);
+  const { esAdmin } = useRole();
+  const [tickets, setTickets] = useState<TicketType[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState<TicketFilters>(defaultFilters);
   const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
   const [ticketDetalle, setTicketDetalle] = useState<TicketDetalle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mostrarCerrados, setMostrarCerrados] = useState(false);
 
-const handleSelectTicket = async (ticket: TicketType) => {
+  const fetchTickets = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const skip = (page - 1) * PAGE_SIZE;
+      const result = await ticketsApi.getAll({
+        skip,
+        take: PAGE_SIZE,
+        estado: filters.estado || undefined,
+        prioridad: filters.prioridad || undefined,
+        canal: filters.canal || undefined,
+        search: filters.search || undefined,
+        referencia: filters.referencia || undefined,
+        agente_id: !esAdmin ? AGENTE_ID : undefined,
+      });
+      setTickets(result.data);
+      setTotal(result.total);
+    } catch {
+      setTickets([]);
+      setTotal(0);
+      setError("Usando datos locales — backend no disponible");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [page, filters, esAdmin]);
+
+  const handleFilterChange = (newFilters: TicketFilters) => {
+    setFilters(newFilters);
+    setPage(1);
+  };
+
+  const handleTicketClick = (ticket: TicketType) => {
     if (ticket.estado === "cerrado" && !esAdmin) return;
     setSelectedTicket(ticket);
+    sessionStorage.setItem("selectedTicketId", ticket.id);
     setIsLoadingDetalle(true);
-    try {
-      const [detalle, interacciones] = await Promise.all([
-        ticketsApi.getById(ticket.id),
-        interaccionesApi.getByTicket(ticket.id),
-      ]);
+    void Promise.all([
+      ticketsApi.getById(ticket.id),
+      interaccionesApi.getByTicket(ticket.id),
+    ]).then(([detalle, interacciones]) => {
       setTicketDetalle({ ...detalle, interacciones });
-    } catch {
+    }).catch(() => {
       setTicketDetalle(mockTicketDetalle);
-    } finally {
+    }).finally(() => {
       setIsLoadingDetalle(false);
-    }
+    });
   };
 
   useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        setIsLoading(true);
-        const data = await ticketsApi.getAll({ take: 50 });
-        setTickets(data.length > 0 ? data : mockTickets);
-
-        const selectedId = sessionStorage.getItem("selectedTicketId");
-        if (selectedId) {
-          sessionStorage.removeItem("selectedTicketId");
-          const ticket = data.find((t) => t.id === selectedId);
-          if (ticket) {
-            handleSelectTicket(ticket);
-          }
-        }
-      } catch {
-        setTickets(mockTickets);
-        setError("Usando datos locales — backend no disponible");
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchTickets();
+  }, [fetchTickets]);
+
+  useEffect(() => {
+    const selectedId = sessionStorage.getItem("selectedTicketId");
+    if (selectedId && !selectedTicket) {
+      sessionStorage.removeItem("selectedTicketId");
+      void (async () => {
+        setIsLoadingDetalle(true);
+        try {
+          const detalle = await ticketsApi.getById(selectedId);
+          setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, salud_ref: detalle.salud_ref, slaPercent: 0, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
+          setTicketDetalle(detalle);
+        } catch {
+          sessionStorage.removeItem("selectedTicketId");
+        } finally {
+          setIsLoadingDetalle(false);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const ticketsFiltrados = mostrarCerrados
-    ? tickets
-    : tickets.filter((t) => t.estado !== "cerrado");
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setPage(1);
+    setSelectedTicket(null);
+    setTicketDetalle(null);
+  }, [esAdmin]);
+
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
   if (selectedTicket) {
     return (
@@ -123,34 +157,15 @@ const handleSelectTicket = async (ticket: TicketType) => {
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-semibold text-[#353535] tracking-tight mb-1">
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {ticketsFiltrados.length} tickets
-            {!mostrarCerrados && tickets.filter(t => t.estado === "cerrado").length > 0 && (
-              <span className="ml-1 text-[#9ca3af]">
-                ({tickets.filter(t => t.estado === "cerrado").length} cerrados ocultos)
-              </span>
-            )}
+            {esAdmin ? "Todos los tickets" : "Mis tickets asignados"} — {total} en total
           </p>
         </div>
-
-        {/* Toggle mostrar cerrados */}
-        <label className="flex items-center gap-2 text-sm text-[#6b7280] cursor-pointer">
-          <input
-            type="checkbox"
-            checked={mostrarCerrados}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setMostrarCerrados(e.target.checked)
-            }
-            className="accent-[#3c6e71]"
-          />
-          Mostrar tickets cerrados
-        </label>
       </div>
 
       {error && (
@@ -161,113 +176,39 @@ const handleSelectTicket = async (ticket: TicketType) => {
 
       {isLoading ? (
         <SkeletonTable rows={8} />
-      ) : ticketsFiltrados.length === 0 ? (
-        <div className="border border-[#d9d9d9] rounded-xl">
-          <EmptyState
-            icon={Ticket}
-            title="No hay tickets"
-            description="Aún no se han creado tickets. Usa el botón 'Crear Ticket' para abrir el primero."
-          />
-        </div>
       ) : (
-        <div className="border border-[#d9d9d9] rounded-xl overflow-hidden">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-[#284b63]">
-                {["ID", "Asunto", "Canal", "Prioridad", "Estado", "Agente", "Cliente", "SLA", ""].map((h) => (
-                  <th key={h} className="text-left text-white text-xs font-medium px-4 py-3 tracking-wide">
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {ticketsFiltrados.map((ticket: TicketType) => {
-                const slaStatus =
-                  ticket.slaPercent >= 100 ? "critical"
-                  : ticket.slaPercent >= 75 ? "warning"
-                  : "ok";
-                const slaColor =
-                  slaStatus === "critical" ? "#ef4444"
-                  : slaStatus === "warning" ? "#eab308"
-                  : "#22c55e";
+        <>
+          <FiltersBar
+            filters={filters}
+            onFilterChange={handleFilterChange}
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            onPageChange={setPage}
+            pageSize={PAGE_SIZE}
+          />
 
-                const esCerrado = ticket.estado === "cerrado";
-
-                return (
-                  <tr
-                    key={ticket.id}
-                    className={`border-b border-[#d9d9d9] last:border-0 transition-colors ${
-                      esCerrado && !esAdmin
-                        ? "bg-gray-50 opacity-60 cursor-not-allowed"
-                        : esCerrado && esAdmin
-                        ? "bg-gray-50 opacity-70 cursor-pointer hover:opacity-90"
-                        : "hover:bg-gray-50 cursor-pointer"
-                    }`}
-                    onClick={() => handleSelectTicket(ticket)}
-                  >
-                    <td className="px-4 py-3 font-mono text-xs text-[#6b7280]">
-                      {ticket.id}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#353535] max-w-[220px]">
-                      <span className="block truncate">{ticket.asunto}</span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#6b7280] capitalize">
-                      {ticket.canal}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        ticket.prioridad === "critica" ? "bg-red-500 text-white"
-                        : ticket.prioridad === "alta" ? "bg-[#353535] text-white"
-                        : ticket.prioridad === "media" ? "bg-[#d9d9d9] text-[#353535]"
-                        : "border border-[#d9d9d9] text-[#6b7280]"
-                      }`}>
-                        {getPrioridadLabel(ticket.prioridad)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        ticket.estado === "abierto" ? "border border-[#284b63] text-[#284b63]"
-                        : ticket.estado === "progreso" ? "bg-[#284b63] text-white"
-                        : ticket.estado === "resuelto" ? "bg-[#3c6e71] text-white"
-                        : "bg-[#d9d9d9] text-[#353535]"
-                      }`}>
-                        {getEstadoLabel(ticket.estado)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#6b7280]">
-                      {ticket.agente_nombre}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#6b7280]">
-                      {ticket.cliente_nombre}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: slaColor }} />
-                        <span className="text-xs font-medium" style={{ color: slaColor }}>
-                          {ticket.slaPercent >= 100 ? `${ticket.slaPercent}% — Vencido`
-                          : ticket.slaPercent >= 75 ? `${ticket.slaPercent}% — En riesgo`
-                          : `${ticket.slaPercent}%`}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <button
-                        className="text-[#6b7280] hover:text-[#3c6e71] transition-colors"
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          handleSelectTicket(ticket);
-                        }}
-                      >
-                        <Eye size={15} />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+          {tickets.length === 0 ? (
+            <div className="border border-[#d9d9d9] rounded-xl">
+              <EmptyState
+                icon={Ticket}
+                title="No hay tickets"
+                description="No se encontraron tickets con los filtros seleccionados."
+                actionLabel="Limpiar filtros"
+                onAction={() => {
+                  setFilters(defaultFilters);
+                  setPage(1);
+                }}
+              />
+            </div>
+          ) : (
+            <TicketsTable
+              tickets={tickets}
+              filter=""
+              onTicketClick={handleTicketClick}
+            />
+          )}
+        </>
       )}
     </div>
   );

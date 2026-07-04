@@ -1,0 +1,62 @@
+.cliente-dash-header {
+  background-color: #284b63;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cliente-dash-header__left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.cliente-dash-header__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #3c6e71;
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cliente-dash-header__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.cliente-dash-header__name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cliente-dash-header__email {
+  font-size: 0.8rem;
+  color: #d9d9d9;
+}
+
+.cliente-dash-header__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+}
+
+.cliente-dash-header__brand-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cliente-dash-header__brand-sub {
+  font-size: 0.7rem;
+  color: #d9d9d9;
+}

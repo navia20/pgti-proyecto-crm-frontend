@@ -1,14 +1,16 @@
 "use client";
 
 import "./TicketDetail.css";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Circle, AlertCircle, User,
-  Clock, Tag, BookOpen, Link, ChevronDown,
+  Clock, Tag, Link, ChevronDown, Share2, Check,
 } from "lucide-react";
-import { TicketDetalle, TicketActivity, ArticuloKB, Interaccion, TicketEstado } from "../../lib/types/ticket.types";
-import { mockArticulosKB } from "../../lib/mocks/tickets.mock";
+import { enlacesApi } from "../../lib/api/enlaces.api";
+import { FRONTEND_URL } from "../../lib/api/config";
+import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal } from "../../lib/types/ticket.types";
 import { ticketsApi } from "../../lib/api/tickets.api";
+import { interaccionesApi } from "../../lib/api/interacciones.api";
 import MessageThread from "./MessageThread";
 import ActivityPanel from "./ActivityPanel";
 
@@ -38,104 +40,49 @@ const estadoClass: Record<string, string> = {
   cerrado: "badge-status-detail--resolved",
 };
 
-const prioridadClass: Record<string, string> = {
-  critica: "badge-priority-detail--urgent",
-  alta: "badge-priority-detail--high",
-  media: "badge-priority-detail--medium",
-  baja: "badge-priority-detail--low",
-};
-
-// Estados disponibles según rol
 const estadosAgente: TicketEstado[] = ["abierto", "progreso", "resuelto"];
 const estadosAdmin: TicketEstado[] = ["abierto", "progreso", "resuelto", "cerrado"];
 
-// Componente panel KB
-function PanelKB({ ticket }: { ticket: TicketDetalle }) {
-  const [usados, setUsados] = useState<string[]>([]);
-
-  const marcarUsado = (id: string) => {
-    setUsados((prev) => prev.includes(id) ? prev : [...prev, id]);
-  };
-
+function PanelReferencias({ ticket }: { ticket: TicketDetalle }) {
   return (
-    <div className="ticket-kb">
-      <div className="ticket-kb__header">
-        <div className="ticket-kb__title">
-          <BookOpen size={13} style={{ display: "inline", marginRight: "0.375rem" }} />
-          Base de Conocimiento
-        </div>
-        <div className="ticket-kb__subtitle">
-          Artículos sugeridos para este ticket
-        </div>
+    <div className="ticket-referencias">
+      <div className="ticket-referencias__title">
+        <Link size={12} style={{ display: "inline", marginRight: "0.375rem" }} />
+        Referencias Externas
       </div>
-
-      <div className="ticket-kb__list">
-        {mockArticulosKB.length === 0 ? (
-          <div className="ticket-kb__empty">
-            No hay artículos sugeridos para esta categoría
+      <div className="ticket-referencias__list">
+        {ticket.pedido_id_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Pedido</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.pedido_id_ref}
+            </span>
           </div>
-        ) : (
-          mockArticulosKB.map((articulo: ArticuloKB) => {
-            const usado = usados.includes(articulo.id);
-            return (
-              <div
-                key={articulo.id}
-                className={`ticket-kb__item ${usado ? "ticket-kb__item--used" : ""}`}
-              >
-                <div className="ticket-kb__item-category">{articulo.categoria}</div>
-                <div className="ticket-kb__item-title">{articulo.titulo}</div>
-                <div className="ticket-kb__item-actions">
-                  <button className="ticket-kb__btn">Ver</button>
-                  {!usado ? (
-                    <button
-                      className="ticket-kb__btn ticket-kb__btn--primary"
-                      onClick={() => marcarUsado(articulo.id)}
-                    >
-                      Adjuntar
-                    </button>
-                  ) : (
-                    <span className="ticket-kb__badge">✓ Adjuntado</span>
-                  )}
-                </div>
-              </div>
-            );
-          })
         )}
-      </div>
-
-      {/* Panel de enlaces externos */}
-      <div className="ticket-enlaces">
-        <div className="ticket-enlaces__title">
-          <Link size={12} style={{ display: "inline", marginRight: "0.375rem" }} />
-          Referencias Externas
-        </div>
-        <div className="ticket-enlaces__form">
-          <div className="ticket-enlaces__row">
-            <span className="ticket-enlaces__label">Pedido</span>
-            {ticket.pedido_id_ref ? (
-              <span className="ticket-enlaces__badge">
-                <Link size={10} />
-                {ticket.pedido_id_ref}
-              </span>
-            ) : (
-              <input type="text" placeholder="ped-123" className="ticket-enlaces__input" />
-            )}
+        {ticket.suscripcion_id_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Suscripción</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.suscripcion_id_ref}
+            </span>
           </div>
-          <div className="ticket-enlaces__row">
-            <span className="ticket-enlaces__label">Suscripción</span>
-            {ticket.suscripcion_id_ref ? (
-              <span className="ticket-enlaces__badge">
-                <Link size={10} />
-                {ticket.suscripcion_id_ref}
-              </span>
-            ) : (
-              <input type="text" placeholder="sus-456" className="ticket-enlaces__input" />
-            )}
+        )}
+        {ticket.salud_ref && (
+          <div className="ticket-referencias__row">
+            <span className="ticket-referencias__label">Salud</span>
+            <span className="ticket-referencias__badge">
+              <Link size={10} />
+              {ticket.salud_ref}
+            </span>
           </div>
-          {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && (
-            <button className="ticket-enlaces__save-btn">Guardar referencias</button>
-          )}
-        </div>
+        )}
+        {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && !ticket.salud_ref && (
+          <div className="ticket-referencias__empty">
+            Sin referencias externas
+          </div>
+        )}
       </div>
     </div>
   );
@@ -144,31 +91,38 @@ function PanelKB({ ticket }: { ticket: TicketDetalle }) {
 export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailProps) {
   const [interacciones, setInteracciones] = useState(ticket.interacciones);
   const [estadoActual, setEstadoActual] = useState<TicketEstado>(ticket.estado);
+  const [prioridadActual, setPrioridadActual] = useState(ticket.prioridad);
+  const [canalActual, setCanalActual] = useState(ticket.canal);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  const [generandoEnlace, setGenerandoEnlace] = useState(false);
+  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolucionTexto, setResolucionTexto] = useState("");
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
+    if (nueva.autor_tipo === "agente" && estadoActual === "abierto") {
+      setEstadoActual("progreso");
+    }
   };
 
   const handleCambiarEstado = async (nuevoEstado: TicketEstado) => {
     if (nuevoEstado === estadoActual) return;
+    const anterior = estadoLabel[estadoActual];
+    const nuevo = estadoLabel[nuevoEstado];
     try {
       setCambiandoEstado(true);
       await ticketsApi.actualizar(ticket.id, { estado: nuevoEstado });
       setEstadoActual(nuevoEstado);
-      // Agregar nota de sistema en actividad
-      const nuevaInteraccion: Interaccion = {
-        id: `sys-${Date.now()}`,
+      const interaccion = await interaccionesApi.crear({
         ticket_id: ticket.id,
         autor_tipo: "sistema",
         autor_id: "sistema",
-        contenido: `Estado cambiado a "${estadoLabel[nuevoEstado]}"`,
-        es_nota_interna: true,
-        creado_en: new Date().toISOString(),
-        autor_nombre: "Sistema",
-        autor_iniciales: "SI",
-      };
-      setInteracciones((prev) => [...prev, nuevaInteraccion]);
+        contenido: `Estado cambiado de "${anterior}" a "${nuevo}"`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
     } catch (error) {
       console.error("Error al cambiar estado:", error);
     } finally {
@@ -178,22 +132,125 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
   const estadosDisponibles = esAdmin ? estadosAdmin : estadosAgente;
 
-  const activityItems: TicketActivity[] = [
-    {
-      id: 1,
-      type: "status_change",
-      user: "Sistema",
-      timestamp: ticket.interacciones[0]?.creado_en ?? "",
-      from: "nuevo",
-      to: estadoActual,
-    },
-  ];
+  const handleCambiarPrioridad = async (nuevaPrioridad: TicketPrioridad) => {
+    if (nuevaPrioridad === prioridadActual) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, { prioridad: nuevaPrioridad });
+      setPrioridadActual(nuevaPrioridad);
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Prioridad cambiada de "${prioridadLabel[prioridadActual]}" a "${prioridadLabel[nuevaPrioridad]}"`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
+    } catch (error) {
+      console.error("Error al cambiar prioridad:", error);
+    }
+  };
+
+  const handleCambiarCanal = async (nuevoCanal: TicketCanal) => {
+    if (nuevoCanal === canalActual) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, { canal: nuevoCanal });
+      setCanalActual(nuevoCanal);
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Canal cambiado de "${canalActual}" a "${nuevoCanal}"`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
+    } catch (error) {
+      console.error("Error al cambiar canal:", error);
+    }
+  };
+
+  const handleResolver = async () => {
+    if (!resolucionTexto.trim()) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, {
+        estado: "resuelto",
+        resolucion: resolucionTexto.trim(),
+      });
+      setEstadoActual("resuelto");
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Ticket resuelto: ${resolucionTexto.trim()}`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
+      setShowResolveModal(false);
+      setResolucionTexto("");
+    } catch (error) {
+      console.error("Error al resolver ticket:", error);
+    }
+  };
+
+  const handleCopiarEnlace = async () => {
+    try {
+      setGenerandoEnlace(true);
+      const { url } = await enlacesApi.crear(ticket.id);
+      const fullUrl = `${FRONTEND_URL}${url}`;
+      await navigator.clipboard.writeText(fullUrl);
+      setEnlaceCopiado(true);
+      setTimeout(() => setEnlaceCopiado(false), 3000);
+    } catch (error) {
+      console.error("Error al generar enlace:", error);
+    } finally {
+      setGenerandoEnlace(false);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const nuevas = await interaccionesApi.getByTicket(ticket.id);
+        setInteracciones((prev) => {
+          if (nuevas.length !== prev.length) return nuevas;
+          return prev;
+        });
+      } catch {}
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [ticket.id]);
+
+  const activityItems: TicketActivity[] = interacciones
+    .filter((i) => i.autor_tipo === "sistema" && !i.es_nota_interna)
+    .map((i, idx) => {
+      let type: TicketActivity["type"] = "status_change";
+      let from = "";
+      let to = "";
+
+      if (i.contenido.startsWith("Estado cambiado")) {
+        type = "status_change";
+        const match = i.contenido.match(/de "(.+?)" a "(.+)"/);
+        if (match) { from = match[1]; to = match[2]; }
+      } else if (i.contenido.startsWith("Ticket resuelto")) {
+        type = "status_change";
+        from = "abierto";
+        to = "resuelto";
+      } else if (i.contenido.startsWith("Prioridad cambiada")) {
+        type = "priority_change";
+        const match = i.contenido.match(/de "(.+?)" a "(.+)"/);
+        if (match) { from = match[1]; to = match[2]; }
+      } else if (i.contenido.startsWith("Canal cambiado")) {
+        type = "assignment";
+        const match = i.contenido.match(/de "(.+?)" a "(.+)"/);
+        if (match) { from = match[1]; to = match[2]; }
+      }
+
+      return { id: idx + 1, type, user: i.autor_nombre, timestamp: i.creado_en, from, to };
+    });
 
   const ticketCerrado = estadoActual === "cerrado";
 
   return (
     <div className="ticket-detail">
-      {/* Banner ticket cerrado */}
       {ticketCerrado && (
         <div
           style={{
@@ -231,10 +288,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
         </div>
       )}
 
-      {/* Panel izquierdo — Metadatos */}
       <aside className="ticket-detail__sidebar" style={ticketCerrado ? { paddingTop: "2.5rem" } : {}}>
-
-        {/* Estado con selector */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Circle size={12} />
@@ -291,52 +345,121 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
           )}
         </div>
 
-        {/* Prioridad */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <AlertCircle size={12} />
             Prioridad
           </div>
-          <span className={`badge-priority-detail ${prioridadClass[ticket.prioridad]}`}>
-            {prioridadLabel[ticket.prioridad]}
-          </span>
+          <div style={{ position: "relative" }}>
+            <select
+              value={prioridadActual}
+              onChange={(e) => handleCambiarPrioridad(e.target.value as TicketPrioridad)}
+              style={{
+                appearance: "none",
+                border: "1px solid #d9d9d9",
+                borderRadius: "9999px",
+                padding: "0.2rem 1.5rem 0.2rem 0.6rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: prioridadActual === "critica" ? "#ffffff"
+                  : prioridadActual === "alta" ? "#ffffff"
+                  : prioridadActual === "media" ? "#ffffff"
+                  : "#6b7280",
+                backgroundColor: prioridadActual === "critica" ? "#ef4444"
+                  : prioridadActual === "alta" ? "#f97316"
+                  : prioridadActual === "media" ? "#eab308"
+                  : "transparent",
+                cursor: "pointer",
+                outline: "none",
+                fontFamily: "inherit",
+              }}
+            >
+              {Object.entries(prioridadLabel).map(([value, label]) => (
+                <option key={value} value={value} style={{ color: "#353535", backgroundColor: "#ffffff" }}>
+                  {label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={10}
+              style={{
+                position: "absolute",
+                right: "0.4rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
+                color: prioridadActual === "baja" ? "#6b7280" : "#ffffff",
+              }}
+            />
+          </div>
         </div>
 
         <hr className="ticket-detail__separator" />
 
-        {/* Canal */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Tag size={12} />
             Canal
           </div>
-          <span className="ticket-detail__meta-value capitalize">{ticket.canal}</span>
+          <div style={{ position: "relative" }}>
+            <select
+              value={canalActual}
+              onChange={(e) => handleCambiarCanal(e.target.value as TicketCanal)}
+              style={{
+                appearance: "none",
+                border: "1px solid #d9d9d9",
+                borderRadius: "9999px",
+                padding: "0.2rem 1.5rem 0.2rem 0.6rem",
+                fontSize: "0.75rem",
+                fontWeight: 500,
+                color: "#353535",
+                backgroundColor: "transparent",
+                cursor: "pointer",
+                outline: "none",
+                fontFamily: "inherit",
+                textTransform: "capitalize",
+              }}
+            >
+              {["chat", "email", "telefono", "app"].map((c) => (
+                <option key={c} value={c} style={{ color: "#353535", backgroundColor: "#ffffff" }}>
+                  {c === "telefono" ? "Teléfono" : c.charAt(0).toUpperCase() + c.slice(1)}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              size={10}
+              style={{
+                position: "absolute",
+                right: "0.4rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                pointerEvents: "none",
+                color: "#6b7280",
+              }}
+            />
+          </div>
         </div>
 
-{/* Agente */}
-<div className="ticket-detail__meta-group">
-  <div className="ticket-detail__meta-label">
-    <User size={12} />
-    Gestionado por
-  </div>
-  <div className="ticket-detail__person">
-    <div className="ticket-detail__avatar"
-      style={{ backgroundColor: "#284b63" }}
-    >
-      AS
-    </div>
-    <div className="ticket-detail__person-info">
-      <span className="ticket-detail__person-name">
-        Administrador del Sistema
-      </span>
-      <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
-        Sin módulo de usuarios activo
-      </span>
-    </div>
-  </div>
-</div>
+        <div className="ticket-detail__meta-group">
+          <div className="ticket-detail__meta-label">
+            <User size={12} />
+            Gestionado por
+          </div>
+          <div className="ticket-detail__person">
+            <div className="ticket-detail__avatar" style={{ backgroundColor: "#284b63" }}>
+              AS
+            </div>
+            <div className="ticket-detail__person-info">
+              <span className="ticket-detail__person-name">
+                Administrador del Sistema
+              </span>
+              <span style={{ fontSize: "0.7rem", color: "#9ca3af" }}>
+                Sin módulo de usuarios activo
+              </span>
+            </div>
+          </div>
+        </div>
 
-        {/* Cliente */}
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <User size={12} />
@@ -356,7 +479,48 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
         <hr className="ticket-detail__separator" />
 
-        {/* SLA */}
+        <div className="ticket-detail__meta-group">
+          <button
+            onClick={handleCopiarEnlace}
+            disabled={generandoEnlace || enlaceCopiado}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#d9d9d9] hover:border-[#3c6e71] hover:text-[#3c6e71] disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {enlaceCopiado ? (
+              <>
+                <Check size={14} className="text-green-600" />
+                <span className="text-green-600">Enlace copiado</span>
+              </>
+            ) : (
+              <>
+                <Share2 size={14} />
+                <span>Compartir con cliente</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {!ticketCerrado && estadoActual !== "resuelto" && (
+          <>
+            <hr className="ticket-detail__separator" />
+            <div className="ticket-detail__meta-group" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <button
+                onClick={() => setShowResolveModal(true)}
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#3c6e71] text-[#3c6e71] hover:bg-[#3c6e71] hover:text-white"
+              >
+                Resolver
+              </button>
+              <button
+                onClick={() => setShowConfirmClose(true)}
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+              >
+                Cerrar ticket
+              </button>
+            </div>
+          </>
+        )}
+
+        <hr className="ticket-detail__separator" />
+
         <div className="ticket-detail__meta-group">
           <div className="ticket-detail__meta-label">
             <Clock size={12} />
@@ -366,26 +530,8 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
             {new Date(ticket.fecha_vencimiento_sla).toLocaleString("es-ES")}
           </span>
         </div>
-
-        <hr className="ticket-detail__separator" />
-
-        {/* Tags */}
-        {ticket.tags.length > 0 && (
-          <div className="ticket-detail__meta-group">
-            <div className="ticket-detail__meta-label">
-              <Tag size={12} />
-              Tags
-            </div>
-            <div className="ticket-detail__tags">
-              {ticket.tags.map((tag) => (
-                <span key={tag} className="ticket-detail__tag">{tag}</span>
-              ))}
-            </div>
-          </div>
-        )}
       </aside>
 
-      {/* Panel central — Mensajes */}
       <main className="ticket-detail__main" style={ticketCerrado ? { paddingTop: "2rem", pointerEvents: ticketCerrado && !esAdmin ? "none" : "auto", opacity: ticketCerrado ? 0.7 : 1 } : {}}>
         <MessageThread
           ticket={{ ...ticket, interacciones }}
@@ -393,13 +539,163 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
         />
       </main>
 
-      {/* Panel derecho — KB + Referencias + Actividad */}
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <PanelKB ticket={ticket} />
+        <PanelReferencias ticket={ticket} />
         <aside className="ticket-detail__activity">
           <ActivityPanel activity={activityItems} />
         </aside>
       </div>
+
+      {showConfirmClose && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setShowConfirmClose(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              maxWidth: "400px",
+              width: "90%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+              Cerrar ticket
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1.25rem" }}>
+              ¿Estás seguro de cerrar este ticket? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowConfirmClose(false)}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmClose(false);
+                  handleCambiarEstado("cerrado");
+                }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#dc2626",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Sí, cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResolveModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => { setShowResolveModal(false); setResolucionTexto(""); }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              maxWidth: "480px",
+              width: "90%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+              Resolver ticket
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1rem" }}>
+              Describe la resolución de esta solicitud. Esta información será visible para el cliente y otros módulos.
+            </p>
+            <textarea
+              value={resolucionTexto}
+              onChange={(e) => setResolucionTexto(e.target.value)}
+              placeholder="Ej: Se reprogramó el envío para el 5 de julio..."
+              rows={4}
+              style={{
+                width: "100%",
+                border: "1px solid #d9d9d9",
+                borderRadius: "8px",
+                padding: "0.6rem 0.75rem",
+                fontSize: "0.85rem",
+                resize: "vertical",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => { e.target.style.borderColor = "#3c6e71"; }}
+              onBlur={(e) => { e.target.style.borderColor = "#d9d9d9"; }}
+            />
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1rem" }}>
+              <button
+                onClick={() => { setShowResolveModal(false); setResolucionTexto(""); }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResolver}
+                disabled={!resolucionTexto.trim()}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: resolucionTexto.trim() ? "#3c6e71" : "#d9d9d9",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  cursor: resolucionTexto.trim() ? "pointer" : "not-allowed",
+                }}
+              >
+                Resolver ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

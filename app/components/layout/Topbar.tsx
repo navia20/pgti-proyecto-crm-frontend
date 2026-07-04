@@ -11,6 +11,8 @@ import {
   HeadphonesIcon,
   Plus,
   LogOut,
+  Shield,
+  User,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import CrearTicketModal from "../tickets/CrearTicketModal";
@@ -19,24 +21,28 @@ import { ticketsApi } from "../../lib/api/tickets.api";
 import { clientesApi } from "../../lib/api/clientes.api";
 import { ClientePerfil } from "../../lib/types/cliente.types";
 import { useAuth } from "@/app/lib/auth/KeycloakProvider";
+import { useRole } from "../../lib/context/RoleContext";
 
-const navItems = [
-  { label: "Dashboard", href: "/pages/dashboard", icon: LayoutDashboard },
-  { label: "Tickets", href: "/pages/tickets", icon: Ticket },
-  { label: "Clientes", href: "/pages/clientes", icon: Users },
-  { label: "Duplicados", href: "/pages/duplicados", icon: Copy },
-  { label: "Soporte", href: "/pages/soporte", icon: HeadphonesIcon },
+const allNavItems = [
+  { label: "Dashboard", href: "/pages/dashboard", icon: LayoutDashboard, adminOnly: false },
+  { label: "Tickets", href: "/pages/tickets", icon: Ticket, adminOnly: false },
+  { label: "Clientes", href: "/pages/clientes", icon: Users, adminOnly: true },
+  { label: "Duplicados", href: "/pages/duplicados", icon: Copy, adminOnly: true },
+  { label: "Soporte", href: "/pages/soporte", icon: HeadphonesIcon, adminOnly: true },
 ];
 
 export default function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const { setRole, esAdmin } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [clientes, setClientes] = useState<ClientePerfil[]>([]);
 
   const { keycloak } = useAuth();
   const username = keycloak.tokenParsed?.preferred_username ?? "Usuario";
   const initials = username.slice(0, 2).toUpperCase();
+
+  const navItems = allNavItems.filter((item) => esAdmin || !item.adminOnly);
 
   useEffect(() => {
     const fetchClientes = async () => {
@@ -53,7 +59,6 @@ export default function Topbar() {
   const handleCrearTicket = async (form: CrearTicketForm) => {
     try {
       const ticket = await ticketsApi.crear(form);
-      // Si hay descripción, crearla como primera interacción
       if (form.descripcion.trim() && ticket.id) {
         await interaccionesApi.crear({
           ticket_id: ticket.id,
@@ -68,6 +73,12 @@ export default function Topbar() {
     } catch (error) {
       console.error("Error al crear ticket:", error);
     }
+  };
+
+  const handleCrearCliente = async (cliente: { nombre_completo: string; email: string; telefono?: string }) => {
+    const nuevoCliente = await clientesApi.crear(cliente);
+    setClientes((prev) => [...prev, nuevoCliente]);
+    return nuevoCliente;
   };
 
   return (
@@ -107,13 +118,35 @@ export default function Topbar() {
 
         {/* Acciones */}
         <div className="topbar__actions">
-          <button
-            onClick={() => setModalOpen(true)}
-            className="topbar__create-btn"
-          >
-            <Plus size={15} />
-            Crear Ticket
-          </button>
+          {esAdmin && (
+            <button
+              onClick={() => setModalOpen(true)}
+              className="topbar__create-btn"
+            >
+              <Plus size={15} />
+              Crear Ticket
+            </button>
+          )}
+          <div className="flex items-center bg-[#1e3a4f] rounded-lg p-0.5 gap-0.5">
+            <button
+              onClick={() => setRole("admin")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                esAdmin ? "bg-[#3c6e71] text-white" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <Shield size={12} />
+              Admin
+            </button>
+            <button
+              onClick={() => setRole("agente")}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                !esAdmin ? "bg-[#3c6e71] text-white" : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <User size={12} />
+              Agente
+            </button>
+          </div>
           <div className="topbar__user">
             <div className="topbar__user-avatar">{initials}</div>
             <span>{username}</span>
@@ -132,6 +165,7 @@ export default function Topbar() {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         onSubmit={handleCrearTicket}
+        onCrearCliente={handleCrearCliente}
         clientes={clientes}
       />
     </>
