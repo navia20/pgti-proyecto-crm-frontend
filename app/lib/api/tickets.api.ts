@@ -35,6 +35,7 @@ function mapTicket(data: Record<string, unknown>): Ticket {
     slaPercent: calcularSlaPercent(data.fecha_vencimiento_sla as string, prioridad),
     agente_nombre: "Administrador del Sistema",
     cliente_nombre: (data.cliente_nombre as string) ?? `Cliente ${data.cliente_id}`,
+    resolucion: (data.resolucion as string) ?? undefined,
   };
 }
 
@@ -48,6 +49,7 @@ export const ticketsApi = {
     canal?: string;
     search?: string;
     referencia?: string;
+    agente_id?: string;
     ordenar?: string;
     direccion?: string;
   }): Promise<{ data: Ticket[]; total: number }> => {
@@ -60,6 +62,7 @@ export const ticketsApi = {
     if (params?.canal) url.searchParams.set("canal", params.canal);
     if (params?.search) url.searchParams.set("search", params.search);
     if (params?.referencia) url.searchParams.set("referencia", params.referencia);
+    if (params?.agente_id) url.searchParams.set("agente_id", params.agente_id);
     if (params?.ordenar) url.searchParams.set("ordenar", params.ordenar);
     if (params?.direccion) url.searchParams.set("direccion", params.direccion);
 

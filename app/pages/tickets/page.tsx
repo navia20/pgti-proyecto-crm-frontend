@@ -11,8 +11,9 @@ import { mockTicketDetalle } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
+import { useRole } from "../../lib/context/RoleContext";
 
-const esAdmin = true;
+const AGENTE_ID = "00000000-0000-0000-0000-000000000001";
 const PAGE_SIZE = 15;
 
 const defaultFilters: TicketFilters = {
@@ -24,6 +25,7 @@ const defaultFilters: TicketFilters = {
 };
 
 export default function TicketsPage() {
+  const { esAdmin } = useRole();
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -47,6 +49,7 @@ export default function TicketsPage() {
         canal: filters.canal || undefined,
         search: filters.search || undefined,
         referencia: filters.referencia || undefined,
+        agente_id: !esAdmin ? AGENTE_ID : undefined,
       });
       setTickets(result.data);
       setTotal(result.total);
@@ -57,7 +60,7 @@ export default function TicketsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, filters]);
+  }, [page, filters, esAdmin]);
 
   const handleFilterChange = (newFilters: TicketFilters) => {
     setFilters(newFilters);
@@ -67,6 +70,7 @@ export default function TicketsPage() {
   const handleTicketClick = (ticket: TicketType) => {
     if (ticket.estado === "cerrado" && !esAdmin) return;
     setSelectedTicket(ticket);
+    sessionStorage.setItem("selectedTicketId", ticket.id);
     setIsLoadingDetalle(true);
     void Promise.all([
       ticketsApi.getById(ticket.id),
@@ -87,15 +91,25 @@ export default function TicketsPage() {
 
   useEffect(() => {
     const selectedId = sessionStorage.getItem("selectedTicketId");
-    if (selectedId && tickets.length > 0) {
+    if (selectedId && !selectedTicket) {
       sessionStorage.removeItem("selectedTicketId");
-      const ticket = tickets.find((t) => t.id === selectedId);
-      if (ticket) {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        handleTicketClick(ticket);
-      }
+      setIsLoadingDetalle(true);
+      void ticketsApi.getById(selectedId).then((detalle) => {
+        setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, salud_ref: detalle.salud_ref, slaPercent: 0, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
+        setTicketDetalle(detalle);
+      }).catch(() => {
+        sessionStorage.removeItem("selectedTicketId");
+      }).finally(() => {
+        setIsLoadingDetalle(false);
+      });
     }
-  }, [tickets]);
+  }, []);
+
+  useEffect(() => {
+    setPage(1);
+    setSelectedTicket(null);
+    setTicketDetalle(null);
+  }, [esAdmin]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -144,7 +158,7 @@ export default function TicketsPage() {
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {total} tickets en total
+            {esAdmin ? "Todos los tickets" : "Mis tickets asignados"} — {total} en total
           </p>
         </div>
       </div>

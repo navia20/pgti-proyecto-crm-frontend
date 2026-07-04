@@ -19,6 +19,7 @@ export interface Ticket {
   slaPercent: number;
   agente_nombre: string;
   cliente_nombre: string;
+  resolucion?: string;
 }
 
 export interface Interaccion {
@@ -52,6 +53,7 @@ export interface TicketArticulo {
 
 export interface TicketDetalle extends Ticket {
   interacciones: Interaccion[];
+  resolucion?: string;
 }
 
 export interface WeeklyChartData {

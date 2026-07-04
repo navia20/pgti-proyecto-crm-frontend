@@ -9,6 +9,7 @@ export interface EnlaceTicket {
   prioridad: TicketPrioridad;
   canal: TicketCanal;
   cliente_nombre: string;
+  resolucion?: string;
   creado_en: string;
 }
 

@@ -81,8 +81,8 @@ export default function MessageThread({ ticket, onInteraccionCreada }: MessageTh
 
             return (
               <div key={message.id}>
-                <div className={`message-thread__bubble-row ${esCliente ? "message-thread__bubble-row--right" : ""}`}>
-                  {!esCliente && (
+                <div className={`message-thread__bubble-row ${!esCliente ? "message-thread__bubble-row--right" : ""}`}>
+                  {esCliente && (
                     <div
                       className="message-thread__bubble-avatar"
                       style={{ backgroundColor: autor.color }}
@@ -90,7 +90,7 @@ export default function MessageThread({ ticket, onInteraccionCreada }: MessageTh
                       {autor.iniciales}
                     </div>
                   )}
-                  <div className={`message-thread__bubble-group ${esCliente ? "message-thread__bubble-group--right" : ""}`}>
+                  <div className={`message-thread__bubble-group ${!esCliente ? "message-thread__bubble-group--right" : ""}`}>
                     <div className="message-thread__bubble-meta">
                       <span className="message-thread__bubble-name">{autor.nombre}</span>
                       <span className="message-thread__bubble-time">
@@ -120,7 +120,7 @@ export default function MessageThread({ ticket, onInteraccionCreada }: MessageTh
                       {message.contenido}
                     </div>
                   </div>
-                  {esCliente && (
+                  {!esCliente && (
                     <div
                       className="message-thread__bubble-avatar"
                       style={{ backgroundColor: autor.color }}

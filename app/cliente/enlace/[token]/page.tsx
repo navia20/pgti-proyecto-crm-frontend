@@ -190,6 +190,15 @@ export default function EnlacePage({
         </div>
       </div>
 
+      {ticket.resolucion && (
+        <div className="bg-[#f0fdf4] border-b border-[#86efac] px-4 py-3 flex-shrink-0">
+          <div className="max-w-2xl mx-auto">
+            <p className="text-[11px] font-medium text-[#16a34a] mb-0.5">Resolución</p>
+            <p className="text-sm text-[#15803d]">{ticket.resolucion}</p>
+          </div>
+        </div>
+      )}
+
       {/* Área de mensajes - scrollable */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
         <div className="max-w-2xl mx-auto flex flex-col gap-3">

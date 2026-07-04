@@ -96,29 +96,33 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
   const [generandoEnlace, setGenerandoEnlace] = useState(false);
   const [enlaceCopiado, setEnlaceCopiado] = useState(false);
+  const [showConfirmClose, setShowConfirmClose] = useState(false);
+  const [showResolveModal, setShowResolveModal] = useState(false);
+  const [resolucionTexto, setResolucionTexto] = useState("");
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
+    if (nueva.autor_tipo === "agente" && estadoActual === "abierto") {
+      setEstadoActual("progreso");
+    }
   };
 
   const handleCambiarEstado = async (nuevoEstado: TicketEstado) => {
     if (nuevoEstado === estadoActual) return;
+    const anterior = estadoLabel[estadoActual];
+    const nuevo = estadoLabel[nuevoEstado];
     try {
       setCambiandoEstado(true);
       await ticketsApi.actualizar(ticket.id, { estado: nuevoEstado });
       setEstadoActual(nuevoEstado);
-      const nuevaInteraccion: Interaccion = {
-        id: `sys-${Date.now()}`,
+      const interaccion = await interaccionesApi.crear({
         ticket_id: ticket.id,
         autor_tipo: "sistema",
         autor_id: "sistema",
-        contenido: `Estado cambiado a "${estadoLabel[nuevoEstado]}"`,
-        es_nota_interna: true,
-        creado_en: new Date().toISOString(),
-        autor_nombre: "Sistema",
-        autor_iniciales: "SI",
-      };
-      setInteracciones((prev) => [...prev, nuevaInteraccion]);
+        contenido: `Estado cambiado de "${anterior}" a "${nuevo}"`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
     } catch (error) {
       console.error("Error al cambiar estado:", error);
     } finally {
@@ -133,6 +137,14 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
     try {
       await ticketsApi.actualizar(ticket.id, { prioridad: nuevaPrioridad });
       setPrioridadActual(nuevaPrioridad);
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Prioridad cambiada de "${prioridadLabel[prioridadActual]}" a "${prioridadLabel[nuevaPrioridad]}"`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
     } catch (error) {
       console.error("Error al cambiar prioridad:", error);
     }
@@ -143,8 +155,39 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
     try {
       await ticketsApi.actualizar(ticket.id, { canal: nuevoCanal });
       setCanalActual(nuevoCanal);
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Canal cambiado de "${canalActual}" a "${nuevoCanal}"`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
     } catch (error) {
       console.error("Error al cambiar canal:", error);
+    }
+  };
+
+  const handleResolver = async () => {
+    if (!resolucionTexto.trim()) return;
+    try {
+      await ticketsApi.actualizar(ticket.id, {
+        estado: "resuelto",
+        resolucion: resolucionTexto.trim(),
+      });
+      setEstadoActual("resuelto");
+      const interaccion = await interaccionesApi.crear({
+        ticket_id: ticket.id,
+        autor_tipo: "sistema",
+        autor_id: "sistema",
+        contenido: `Ticket resuelto: ${resolucionTexto.trim()}`,
+        es_nota_interna: false,
+      });
+      setInteracciones((prev) => [...prev, interaccion]);
+      setShowResolveModal(false);
+      setResolucionTexto("");
+    } catch (error) {
+      console.error("Error al resolver ticket:", error);
     }
   };
 
@@ -176,16 +219,33 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
     return () => clearInterval(interval);
   }, [ticket.id]);
 
-  const activityItems: TicketActivity[] = [
-    {
-      id: 1,
-      type: "status_change",
-      user: "Sistema",
-      timestamp: ticket.interacciones[0]?.creado_en ?? "",
-      from: "nuevo",
-      to: estadoActual,
-    },
-  ];
+  const activityItems: TicketActivity[] = interacciones
+    .filter((i) => i.autor_tipo === "sistema" && !i.es_nota_interna)
+    .map((i, idx) => {
+      let type: TicketActivity["type"] = "status_change";
+      let from = "";
+      let to = "";
+
+      if (i.contenido.startsWith("Estado cambiado")) {
+        type = "status_change";
+        const match = i.contenido.match(/de "(.+?)" a "(.+)"/);
+        if (match) { from = match[1]; to = match[2]; }
+      } else if (i.contenido.startsWith("Ticket resuelto")) {
+        type = "status_change";
+        from = "abierto";
+        to = "resuelto";
+      } else if (i.contenido.startsWith("Prioridad cambiada")) {
+        type = "priority_change";
+        const match = i.contenido.match(/de "(.+?)" a "(.+)"/);
+        if (match) { from = match[1]; to = match[2]; }
+      } else if (i.contenido.startsWith("Canal cambiado")) {
+        type = "assignment";
+        const match = i.contenido.match(/de "(.+?)" a "(.+)"/);
+        if (match) { from = match[1]; to = match[2]; }
+      }
+
+      return { id: idx + 1, type, user: i.autor_nombre, timestamp: i.creado_en, from, to };
+    });
 
   const ticketCerrado = estadoActual === "cerrado";
 
@@ -439,6 +499,26 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
           </button>
         </div>
 
+        {!ticketCerrado && estadoActual !== "resuelto" && (
+          <>
+            <hr className="ticket-detail__separator" />
+            <div className="ticket-detail__meta-group" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <button
+                onClick={() => setShowResolveModal(true)}
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#3c6e71] text-[#3c6e71] hover:bg-[#3c6e71] hover:text-white"
+              >
+                Resolver
+              </button>
+              <button
+                onClick={() => setShowConfirmClose(true)}
+                className="w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400"
+              >
+                Cerrar ticket
+              </button>
+            </div>
+          </>
+        )}
+
         <hr className="ticket-detail__separator" />
 
         <div className="ticket-detail__meta-group">
@@ -465,6 +545,157 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
           <ActivityPanel activity={activityItems} />
         </aside>
       </div>
+
+      {showConfirmClose && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setShowConfirmClose(false)}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              maxWidth: "400px",
+              width: "90%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+              Cerrar ticket
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1.25rem" }}>
+              ¿Estás seguro de cerrar este ticket? Esta acción no se puede deshacer.
+            </p>
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+              <button
+                onClick={() => setShowConfirmClose(false)}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => {
+                  setShowConfirmClose(false);
+                  handleCambiarEstado("cerrado");
+                }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: "#dc2626",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  cursor: "pointer",
+                }}
+              >
+                Sí, cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResolveModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0, left: 0, right: 0, bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => { setShowResolveModal(false); setResolucionTexto(""); }}
+        >
+          <div
+            style={{
+              backgroundColor: "#fff",
+              borderRadius: "12px",
+              padding: "1.5rem",
+              maxWidth: "480px",
+              width: "90%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "0.5rem" }}>
+              Resolver ticket
+            </h3>
+            <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1rem" }}>
+              Describe la resolución de esta solicitud. Esta información será visible para el cliente y otros módulos.
+            </p>
+            <textarea
+              value={resolucionTexto}
+              onChange={(e) => setResolucionTexto(e.target.value)}
+              placeholder="Ej: Se reprogramó el envío para el 5 de julio..."
+              rows={4}
+              style={{
+                width: "100%",
+                border: "1px solid #d9d9d9",
+                borderRadius: "8px",
+                padding: "0.6rem 0.75rem",
+                fontSize: "0.85rem",
+                resize: "vertical",
+                outline: "none",
+                fontFamily: "inherit",
+                boxSizing: "border-box",
+              }}
+              onFocus={(e) => { e.target.style.borderColor = "#3c6e71"; }}
+              onBlur={(e) => { e.target.style.borderColor = "#d9d9d9"; }}
+            />
+            <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end", marginTop: "1rem" }}>
+              <button
+                onClick={() => { setShowResolveModal(false); setResolucionTexto(""); }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResolver}
+                disabled={!resolucionTexto.trim()}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  backgroundColor: resolucionTexto.trim() ? "#3c6e71" : "#d9d9d9",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  fontWeight: 500,
+                  cursor: resolucionTexto.trim() ? "pointer" : "not-allowed",
+                }}
+              >
+                Resolver ticket
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
