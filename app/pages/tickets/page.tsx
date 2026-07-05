@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Ticket } from "lucide-react";
+import { ArrowLeft, Ticket, Inbox } from "lucide-react";
 import TicketDetail from "../../components/tickets/TicketDetail";
 import TicketsTable from "../../components/dashboard/TicketsTable";
 import TicketsGrid from "../../components/dashboard/TicketsGrid";
@@ -11,8 +11,10 @@ import { SkeletonTable } from "../../components/ui/Skeleton";
 import { mockTicketDetalle } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
+import { solicitudesApi } from "../../lib/api/solicitudes.api";
 import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
 import { useRole } from "../../lib/context/RoleContext";
+import SolicitudesPanel from "../../components/solicitudes/SolicitudesPanel";
 
 const PAGE_SIZE = 15;
 
@@ -25,8 +27,12 @@ const defaultFilters: TicketFilters = {
   mis_tickets: false,
 };
 
+type TabVista = "tickets" | "solicitudes";
+
 export default function TicketsPage() {
   const { esAdmin, userEmail } = useRole();
+  const [tabActiva, setTabActiva] = useState<TabVista>("tickets");
+  const [pendientesCount, setPendientesCount] = useState(0);
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -37,6 +43,12 @@ export default function TicketsPage() {
   const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
+
+  useEffect(() => {
+    if (esAdmin) {
+      void solicitudesApi.getPendientesCount().then(setPendientesCount);
+    }
+  }, [esAdmin, tabActiva]);
 
   const fetchTickets = useCallback(async () => {
     try {
@@ -96,8 +108,8 @@ export default function TicketsPage() {
             : t
         )
       );
-    } catch (error) {
-      console.error("Error al asignar agente:", error);
+    } catch (err) {
+      console.error("Error al asignar agente:", err);
     }
   };
 
@@ -178,13 +190,16 @@ export default function TicketsPage() {
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-semibold text-[#353535] tracking-tight mb-1">
             Tickets
           </h1>
           <p className="text-sm text-[#6b7280]">
-            {filters.mis_tickets ? "Mis tickets asignados" : "Todos los tickets"} — {total} en total
+            {tabActiva === "tickets"
+              ? `${filters.mis_tickets ? "Mis tickets asignados" : "Todos los tickets"} — ${total} en total`
+              : "Solicitudes pendientes de revisión"
+            }
           </p>
         </div>
         {esAdmin && (
@@ -211,59 +226,97 @@ export default function TicketsPage() {
         )}
       </div>
 
-      {error && (
-        <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-          ⚠️ {error}
+      {esAdmin && (
+        <div className="flex gap-1 mb-6 border-b border-[#d9d9d9]">
+          <button
+            onClick={() => setTabActiva("tickets")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tabActiva === "tickets"
+                ? "border-[#3c6e71] text-[#3c6e71]"
+                : "border-transparent text-[#6b7280] hover:text-[#353535]"
+            }`}
+          >
+            <Ticket size={16} />
+            Tickets
+          </button>
+          <button
+            onClick={() => setTabActiva("solicitudes")}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
+              tabActiva === "solicitudes"
+                ? "border-[#3c6e71] text-[#3c6e71]"
+                : "border-transparent text-[#6b7280] hover:text-[#353535]"
+            }`}
+          >
+            <Inbox size={16} />
+            Solicitudes
+            {pendientesCount > 0 && (
+              <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold text-white bg-red-500 rounded-full">
+                {pendientesCount}
+              </span>
+            )}
+          </button>
         </div>
       )}
 
-      {isLoading ? (
-        <SkeletonTable rows={8} />
+      {tabActiva === "solicitudes" && esAdmin ? (
+        <SolicitudesPanel />
       ) : (
         <>
-          <FiltersBar
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            onPageChange={setPage}
-            pageSize={PAGE_SIZE}
-            esAdmin={esAdmin}
-            userEmail={userEmail}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
-
-          {tickets.length === 0 ? (
-            <div className="border border-[#d9d9d9] rounded-xl">
-              <EmptyState
-                icon={Ticket}
-                title="No hay tickets"
-                description="No se encontraron tickets con los filtros seleccionados."
-                actionLabel="Limpiar filtros"
-                onAction={() => {
-                  setFilters(defaultFilters);
-                  setPage(1);
-                }}
-              />
+          {error && (
+            <div className="flex items-center gap-2 mb-4 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              ⚠️ {error}
             </div>
-          ) : viewMode === "grid" ? (
-            <TicketsGrid
-              tickets={tickets}
-              filter=""
-              onTicketClick={handleTicketClick}
-              esAdmin={esAdmin}
-              onAsignarAgente={handleAsignarAgente}
-            />
+          )}
+
+          {isLoading ? (
+            <SkeletonTable rows={8} />
           ) : (
-            <TicketsTable
-              tickets={tickets}
-              filter=""
-              onTicketClick={handleTicketClick}
-              esAdmin={esAdmin}
-              onAsignarAgente={handleAsignarAgente}
-            />
+            <>
+              <FiltersBar
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                page={page}
+                totalPages={totalPages}
+                total={total}
+                onPageChange={setPage}
+                pageSize={PAGE_SIZE}
+                esAdmin={esAdmin}
+                userEmail={userEmail}
+                viewMode={viewMode}
+                onViewModeChange={setViewMode}
+              />
+
+              {tickets.length === 0 ? (
+                <div className="border border-[#d9d9d9] rounded-xl">
+                  <EmptyState
+                    icon={Ticket}
+                    title="No hay tickets"
+                    description="No se encontraron tickets con los filtros seleccionados."
+                    actionLabel="Limpiar filtros"
+                    onAction={() => {
+                      setFilters(defaultFilters);
+                      setPage(1);
+                    }}
+                  />
+                </div>
+              ) : viewMode === "grid" ? (
+                <TicketsGrid
+                  tickets={tickets}
+                  filter=""
+                  onTicketClick={handleTicketClick}
+                  esAdmin={esAdmin}
+                  onAsignarAgente={handleAsignarAgente}
+                />
+              ) : (
+                <TicketsTable
+                  tickets={tickets}
+                  filter=""
+                  onTicketClick={handleTicketClick}
+                  esAdmin={esAdmin}
+                  onAsignarAgente={handleAsignarAgente}
+                />
+              )}
+            </>
           )}
         </>
       )}

@@ -6,34 +6,6 @@ import { enlacesApi } from "../../../lib/api/enlaces.api";
 import { EnlaceResponse } from "../../../lib/types/enlace.types";
 import { Interaccion } from "../../../lib/types/ticket.types";
 
-const estadoLabel: Record<string, string> = {
-  abierto: "Abierto",
-  progreso: "En progreso",
-  resuelto: "Resuelto",
-  cerrado: "Cerrado",
-};
-
-const prioridadLabel: Record<string, string> = {
-  critica: "Crítica",
-  alta: "Alta",
-  media: "Media",
-  baja: "Baja",
-};
-
-const estadoClass: Record<string, string> = {
-  abierto: "bg-transparent border border-[#284b63] text-[#284b63]",
-  progreso: "bg-[#284b63] text-white",
-  resuelto: "bg-[#3c6e71] text-white",
-  cerrado: "bg-[#d9d9d9] text-[#353535]",
-};
-
-const prioridadClass: Record<string, string> = {
-  critica: "bg-red-500 text-white",
-  alta: "bg-[#353535] text-white",
-  media: "bg-[#d9d9d9] text-[#353535]",
-  baja: "border border-[#d9d9d9] text-[#6b7280]",
-};
-
 function getAutorInfo(autor_tipo: string, clienteNombre?: string) {
   switch (autor_tipo) {
     case "agente":
@@ -172,16 +144,6 @@ export default function EnlacePage({
             {ticket.asunto}
           </h1>
           <div className="flex items-center gap-2 mt-1.5">
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${estadoClass[ticket.estado]}`}
-            >
-              {estadoLabel[ticket.estado]}
-            </span>
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium ${prioridadClass[ticket.prioridad]}`}
-            >
-              {prioridadLabel[ticket.prioridad]}
-            </span>
             <span className="text-[10px] text-[#9ca3af] flex items-center gap-1">
               <Clock size={10} />
               {new Date(ticket.creado_en).toLocaleDateString("es-ES")}
@@ -264,7 +226,7 @@ export default function EnlacePage({
       {/* Input fijo abajo */}
       <div className="bg-white border-t border-[#d9d9d9] px-4 py-3 flex-shrink-0">
         <div className="max-w-2xl mx-auto">
-          {ticket.estado !== "cerrado" ? (
+          {ticket.estado !== "cerrado" && ticket.estado !== "resuelto" ? (
             <>
               <div className="flex items-end gap-2">
                 <textarea
@@ -299,7 +261,9 @@ export default function EnlacePage({
           ) : (
             <div className="text-center py-2">
               <p className="text-sm text-[#6b7280]">
-                Este ticket está cerrado.
+                {ticket.estado === "resuelto"
+                  ? "Este ticket fue resuelto."
+                  : "Este ticket está cerrado."}
               </p>
             </div>
           )}

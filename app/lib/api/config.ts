@@ -38,4 +38,11 @@ export const API_ROUTES = {
   enlaceByToken: (token: string) => `${API_BASE_URL}/api/v1/enlace/${token}`,
   crearEnlace: (ticketId: string) => `${API_BASE_URL}/api/v1/tickets/${ticketId}/enlace`,
   responderEnlace: (token: string) => `${API_BASE_URL}/api/v1/enlace/${token}/interacciones`,
+
+  // Solicitudes
+  solicitudes: `${API_BASE_URL}/api/v1/solicitudes`,
+  solicitudById: (id: string) => `${API_BASE_URL}/api/v1/solicitudes/${id}`,
+  aprobarSolicitud: (id: string) => `${API_BASE_URL}/api/v1/solicitudes/${id}/aprobar`,
+  rechazarSolicitud: (id: string) => `${API_BASE_URL}/api/v1/solicitudes/${id}/rechazar`,
+  solicitudesPendientesCount: `${API_BASE_URL}/api/v1/solicitudes/pendientes/count`,
 };
