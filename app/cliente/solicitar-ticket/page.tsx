@@ -4,6 +4,51 @@ import React, { useState } from "react";
 import { Send, CheckCircle, AlertCircle, Ticket } from "lucide-react";
 import { solicitudesApi } from "../../lib/api/solicitudes.api";
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const TELEFONO_REGEX = /^(\+569\d{8}|9\d{8})$/;
+
+interface FormErrors {
+  nombre?: string;
+  email?: string;
+  telefono?: string;
+  asunto?: string;
+  descripcion?: string;
+}
+
+function validate(nombre: string, email: string, telefono: string, asunto: string, descripcion: string): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!nombre.trim()) {
+    errors.nombre = "El nombre es obligatorio";
+  } else if (nombre.trim().length > 100) {
+    errors.nombre = "El nombre no puede superar 100 caracteres";
+  }
+
+  if (!email.trim()) {
+    errors.email = "El email es obligatorio";
+  } else if (!EMAIL_REGEX.test(email.trim())) {
+    errors.email = "Ingresa un email válido";
+  }
+
+  if (telefono.trim() && !TELEFONO_REGEX.test(telefono.trim())) {
+    errors.telefono = "Formato: +569XXXXXXXX o 9XXXXXXXX";
+  }
+
+  if (!asunto.trim()) {
+    errors.asunto = "El asunto es obligatorio";
+  } else if (asunto.trim().length > 100) {
+    errors.asunto = "El asunto no puede superar 100 caracteres";
+  }
+
+  if (!descripcion.trim()) {
+    errors.descripcion = "La descripción es obligatoria";
+  } else if (descripcion.trim().length > 500) {
+    errors.descripcion = "La descripción no puede superar 500 caracteres";
+  }
+
+  return errors;
+}
+
 export default function SolicitarTicketPage() {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
@@ -13,9 +58,45 @@ export default function SolicitarTicketPage() {
   const [enviando, setEnviando] = useState(false);
   const [exito, setExito] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
+
+  const formErrors = validate(nombre, email, telefono, asunto, descripcion);
+  const isValid = Object.keys(formErrors).length === 0;
+
+  const handleBlur = (field: string) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
+    setErrors(validate(nombre, email, telefono, asunto, descripcion));
+  };
+
+  const handleChange = (field: string, value: string) => {
+    switch (field) {
+      case "nombre": setNombre(value); break;
+      case "email": setEmail(value); break;
+      case "telefono": setTelefono(value); break;
+      case "asunto": setAsunto(value); break;
+      case "descripcion": setDescripcion(value); break;
+    }
+    if (touched[field]) {
+      setErrors(validate(
+        field === "nombre" ? value : nombre,
+        field === "email" ? value : email,
+        field === "telefono" ? value : telefono,
+        field === "asunto" ? value : asunto,
+        field === "descripcion" ? value : descripcion,
+      ));
+    }
+  };
+
+  const showFieldError = (field: keyof FormErrors) => touched[field] && errors[field];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setTouched({ nombre: true, email: true, telefono: true, asunto: true, descripcion: true });
+    const validationErrors = validate(nombre, email, telefono, asunto, descripcion);
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
     setEnviando(true);
     setError(null);
 
@@ -97,10 +178,15 @@ export default function SolicitarTicketPage() {
               type="text"
               required
               value={nombre}
-              onChange={(e) => setNombre(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#d9d9d9] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent"
+              onChange={(e) => handleChange("nombre", e.target.value)}
+              onBlur={() => handleBlur("nombre")}
+              maxLength={100}
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent ${showFieldError("nombre") ? "border-red-400" : "border-[#d9d9d9]"}`}
               placeholder="Tu nombre"
             />
+            {showFieldError("nombre") && (
+              <p className="text-xs text-red-600 mt-1">{errors.nombre}</p>
+            )}
           </div>
 
           <div>
@@ -108,13 +194,17 @@ export default function SolicitarTicketPage() {
               Email *
             </label>
             <input
-              type="email"
+              type="text"
               required
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#d9d9d9] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent"
+              onChange={(e) => handleChange("email", e.target.value)}
+              onBlur={() => handleBlur("email")}
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent ${showFieldError("email") ? "border-red-400" : "border-[#d9d9d9]"}`}
               placeholder="tu@email.com"
             />
+            {showFieldError("email") && (
+              <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+            )}
           </div>
 
           <div>
@@ -124,10 +214,14 @@ export default function SolicitarTicketPage() {
             <input
               type="tel"
               value={telefono}
-              onChange={(e) => setTelefono(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#d9d9d9] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent"
+              onChange={(e) => handleChange("telefono", e.target.value)}
+              onBlur={() => handleBlur("telefono")}
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent ${showFieldError("telefono") ? "border-red-400" : "border-[#d9d9d9]"}`}
               placeholder="+569XXXXXXXX"
             />
+            {showFieldError("telefono") && (
+              <p className="text-xs text-red-600 mt-1">{errors.telefono}</p>
+            )}
           </div>
 
           <div>
@@ -138,10 +232,16 @@ export default function SolicitarTicketPage() {
               type="text"
               required
               value={asunto}
-              onChange={(e) => setAsunto(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#d9d9d9] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent"
+              onChange={(e) => handleChange("asunto", e.target.value)}
+              onBlur={() => handleBlur("asunto")}
+              maxLength={100}
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent ${showFieldError("asunto") ? "border-red-400" : "border-[#d9d9d9]"}`}
               placeholder="Resumen breve del problema"
             />
+            {showFieldError("asunto") && (
+              <p className="text-xs text-red-600 mt-1">{errors.asunto}</p>
+            )}
+            <p className="text-xs text-[#9ca3af] mt-1">{asunto.length}/100</p>
           </div>
 
           <div>
@@ -152,15 +252,21 @@ export default function SolicitarTicketPage() {
               required
               rows={4}
               value={descripcion}
-              onChange={(e) => setDescripcion(e.target.value)}
-              className="w-full px-4 py-2.5 border border-[#d9d9d9] rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent resize-none"
+              onChange={(e) => handleChange("descripcion", e.target.value)}
+              onBlur={() => handleBlur("descripcion")}
+              maxLength={500}
+              className={`w-full px-4 py-2.5 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3c6e71] focus:border-transparent resize-none ${showFieldError("descripcion") ? "border-red-400" : "border-[#d9d9d9]"}`}
               placeholder="Describe tu problema con detalle..."
             />
+            {showFieldError("descripcion") && (
+              <p className="text-xs text-red-600 mt-1">{errors.descripcion}</p>
+            )}
+            <p className="text-xs text-[#9ca3af] mt-1">{descripcion.length}/500</p>
           </div>
 
           <button
             type="submit"
-            disabled={enviando}
+            disabled={enviando || !isValid}
             className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-[#3c6e71] text-white rounded-lg font-medium hover:bg-[#2f5f62] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {enviando ? (
