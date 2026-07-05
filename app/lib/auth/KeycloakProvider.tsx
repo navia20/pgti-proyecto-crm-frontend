@@ -12,6 +12,15 @@ import {
   useState,
   ReactNode,
 } from "react";
+import { usePathname } from "next/navigation";
+
+const PUBLIC_PATHS = ["/cliente/solicitar-ticket"];
+const PUBLIC_PREFIXES = ["/cliente/enlace/"];
+
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 const keycloak = new Keycloak({
   url: process.env.NEXT_PUBLIC_KEYCLOAK_URL!,
@@ -28,10 +37,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function KeycloakProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const esRutaPublica = isPublicPath(pathname);
+
   const [initialized, setInitialized] = useState(false);
   const [authenticated, setAuthenticated] = useState(false);
 
   useEffect(() => {
+    if (esRutaPublica) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setInitialized(true);
+      return;
+    }
+
     keycloak
       .init({
         onLoad: "login-required",
@@ -50,7 +68,7 @@ export function KeycloakProvider({ children }: { children: ReactNode }) {
       .catch(() => {
         setInitialized(true);
       });
-  }, []);
+  }, [esRutaPublica]);
 
   if (!initialized)
     return (

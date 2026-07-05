@@ -1,11 +1,25 @@
 "use client";
 
 import { useAuth } from "./KeycloakProvider";
+import { usePathname } from "next/navigation";
 
 const REQUIRED_ROLE = "p7-access";
+const PUBLIC_PATHS = ["/cliente/solicitar-ticket"];
+const PUBLIC_PREFIXES = ["/cliente/enlace/"];
+
+function isPublicPath(pathname: string): boolean {
+  if (PUBLIC_PATHS.includes(pathname)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 export function RoleGuard({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const { keycloak } = useAuth();
+
+  if (isPublicPath(pathname)) {
+    return <>{children}</>;
+  }
+
   const roles: string[] = keycloak.tokenParsed?.realm_access?.roles ?? [];
   const hasAccess = roles.includes(REQUIRED_ROLE);
 
