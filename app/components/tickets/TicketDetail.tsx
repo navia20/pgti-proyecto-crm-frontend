@@ -4,7 +4,7 @@ import "./TicketDetail.css";
 import React, { useState, useEffect } from "react";
 import {
   Circle, AlertCircle, User,
-  Clock, Tag, Link, ChevronDown, Share2, Check,
+  Clock, Tag, Link, ChevronDown, Share2, Check, FileText,
 } from "lucide-react";
 import { enlacesApi } from "../../lib/api/enlaces.api";
 import { FRONTEND_URL } from "../../lib/api/config";
@@ -97,6 +97,21 @@ function PanelReferencias({ ticket }: { ticket: TicketDetalle }) {
             Sin referencias externas
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function PanelDescripcion({ ticket }: { ticket: TicketDetalle }) {
+  if (!ticket.descripcion) return null;
+  return (
+    <div className="ticket-referencias">
+      <div className="ticket-referencias__title">
+        <FileText size={12} style={{ display: "inline", marginRight: "0.375rem" }} />
+        Descripción
+      </div>
+      <div style={{ padding: "0 0.75rem 0.75rem", fontSize: "0.8rem", color: "#353535", lineHeight: "1.5" }}>
+        {ticket.descripcion}
       </div>
     </div>
   );
@@ -606,6 +621,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
       </main>
 
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <PanelDescripcion ticket={ticket} />
         <PanelReferencias ticket={ticket} />
         <aside className="ticket-detail__activity">
           <ActivityPanel activity={activityItems} />

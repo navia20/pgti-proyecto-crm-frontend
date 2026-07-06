@@ -20,6 +20,7 @@ export interface Ticket {
   slaPercent: number;
   agente_nombre: string;
   cliente_nombre: string;
+  descripcion?: string;
   resolucion?: string;
 }
 

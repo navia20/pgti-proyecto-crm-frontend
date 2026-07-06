@@ -42,6 +42,7 @@ function mapTicket(data: Record<string, unknown>): Ticket {
     slaPercent: calcularSlaPercent(data.fecha_vencimiento_sla as string, prioridad),
     agente_nombre: data.agente_id ? (AGENTES_CONOCIDOS[data.agente_id as string] ?? "Agente") : "Sin asignar",
     cliente_nombre: (data.cliente_nombre as string) ?? `Cliente ${data.cliente_id}`,
+    descripcion: (data.descripcion as string) ?? undefined,
     resolucion: (data.resolucion as string) ?? undefined,
   };
 }

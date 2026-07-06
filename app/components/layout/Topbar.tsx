@@ -1,6 +1,5 @@
 "use client";
 
-import { interaccionesApi } from "../../lib/api/interacciones.api";
 import "./Topbar.css";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -56,16 +55,7 @@ export default function Topbar() {
 
   const handleCrearTicket = async (form: CrearTicketForm) => {
     try {
-      const ticket = await ticketsApi.crear(form);
-      if (form.descripcion.trim() && ticket.id) {
-        await interaccionesApi.crear({
-          ticket_id: ticket.id,
-          autor_tipo: "sistema",
-          autor_id: "00000000-0000-0000-0000-000000000001",
-          contenido: form.descripcion,
-          es_nota_interna: false,
-        });
-      }
+      await ticketsApi.crear(form);
       setModalOpen(false);
       window.location.reload();
     } catch (error) {
