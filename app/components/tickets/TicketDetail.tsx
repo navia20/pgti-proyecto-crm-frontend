@@ -8,12 +8,13 @@ import {
 } from "lucide-react";
 import { enlacesApi } from "../../lib/api/enlaces.api";
 import { FRONTEND_URL } from "../../lib/api/config";
-import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal, SaludIncidente } from "../../lib/types/ticket.types";
+import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal, SaludIncidente, PedidoOrden } from "../../lib/types/ticket.types";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 import MessageThread from "./MessageThread";
 import ActivityPanel from "./ActivityPanel";
 import SaludInfoModal from "./SaludInfoModal";
+import PedidoInfoModal from "./PedidoInfoModal";
 
 interface TicketDetailProps {
   ticket: TicketDetalle;
@@ -49,7 +50,7 @@ const AGENTES_CONOCIDOS = [
   { id: "p7.agent@ucn.cl", nombre: "Agente CRM" },
 ];
 
-function PanelReferencias({ ticket, onVerSalud }: { ticket: TicketDetalle; onVerSalud?: () => void }) {
+function PanelReferencias({ ticket, onVerSalud, onVerPedido }: { ticket: TicketDetalle; onVerSalud?: () => void; onVerPedido?: () => void }) {
   return (
     <div className="ticket-referencias">
       <div className="ticket-referencias__title">
@@ -64,6 +65,25 @@ function PanelReferencias({ ticket, onVerSalud }: { ticket: TicketDetalle; onVer
               <Link size={10} />
               {ticket.pedido_id_ref}
             </span>
+            {onVerPedido && (
+              <button
+                onClick={onVerPedido}
+                style={{
+                  marginLeft: "0.25rem",
+                  padding: "0.2rem 0.5rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 500,
+                  color: "#3c6e71",
+                  backgroundColor: "#f0f7f7",
+                  border: "1px solid #3c6e71",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Ver información
+              </button>
+            )}
           </div>
         )}
         {ticket.suscripcion_id_ref && (
@@ -152,6 +172,9 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [showSaludModal, setShowSaludModal] = useState(false);
   const [saludData, setSaludData] = useState<SaludIncidente | null>(null);
   const [cargandoSalud, setCargandoSalud] = useState(false);
+  const [showPedidoModal, setShowPedidoModal] = useState(false);
+  const [pedidoData, setPedidoData] = useState<PedidoOrden | null>(null);
+  const [cargandoPedido, setCargandoPedido] = useState(false);
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
@@ -331,6 +354,15 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
     const data = await ticketsApi.getSaludIncidente(ticket.salud_ref);
     setSaludData(data);
     setCargandoSalud(false);
+  };
+
+  const handleVerPedido = async () => {
+    if (!ticket.pedido_id_ref) return;
+    setCargandoPedido(true);
+    setShowPedidoModal(true);
+    const data = await ticketsApi.getPedidoOrden(ticket.pedido_id_ref);
+    setPedidoData(data);
+    setCargandoPedido(false);
   };
 
   return (
@@ -654,7 +686,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <PanelDescripcion ticket={ticket} />
-        <PanelReferencias ticket={ticket} onVerSalud={ticket.salud_ref ? handleVerSalud : undefined} />
+        <PanelReferencias ticket={ticket} onVerSalud={ticket.salud_ref ? handleVerSalud : undefined} onVerPedido={ticket.pedido_id_ref ? handleVerPedido : undefined} />
         <aside className="ticket-detail__activity">
           <ActivityPanel activity={activityItems} />
         </aside>
@@ -870,6 +902,81 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
               </p>
               <button
                 onClick={() => { setShowSaludModal(false); setSaludData(null); }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      {showPedidoModal && (
+        cargandoPedido ? (
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => { setShowPedidoModal(false); setPedidoData(null); }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "2rem",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>Cargando información del pedido...</div>
+            </div>
+          </div>
+        ) : pedidoData ? (
+          <PedidoInfoModal data={pedidoData} onClose={() => { setShowPedidoModal(false); setPedidoData(null); }} />
+        ) : (
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => { setShowPedidoModal(false); setPedidoData(null); }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "1.5rem",
+                maxWidth: "400px",
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1rem" }}>
+                No se pudo cargar la información del pedido.
+              </p>
+              <button
+                onClick={() => { setShowPedidoModal(false); setPedidoData(null); }}
                 style={{
                   padding: "0.4rem 1rem",
                   borderRadius: "8px",

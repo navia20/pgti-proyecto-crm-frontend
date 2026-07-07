@@ -1,5 +1,5 @@
 import { API_ROUTES } from "./config";
-import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente } from "../types/ticket.types";
+import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente, PedidoOrden } from "../types/ticket.types";
 import { authFetch } from "../auth/KeycloakProvider";
 
 const SLA_HOURS: Record<TicketPrioridad, number> = {
@@ -140,6 +140,17 @@ export const ticketsApi = {
   getSaludIncidente: async (saludRef: string): Promise<SaludIncidente | null> => {
     try {
       const url = `/api/salud/${saludRef}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return res.json();
+    } catch {
+      return null;
+    }
+  },
+
+  getPedidoOrden: async (pedidoRef: string): Promise<PedidoOrden | null> => {
+    try {
+      const url = `/api/pedidos/${pedidoRef}`;
       const res = await fetch(url);
       if (!res.ok) return null;
       return res.json();

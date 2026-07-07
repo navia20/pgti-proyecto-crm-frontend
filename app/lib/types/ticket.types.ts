@@ -137,3 +137,39 @@ export interface SaludIncidente {
   profesionalSaludId: string | null;
   profesionalSalud: SaludProfesional | null;
 }
+
+export interface PedidoCliente {
+  nombre: string;
+  email: string;
+  telefono: string;
+}
+
+export interface PedidoDireccion {
+  calle: string;
+  numero: number;
+  ciudad: string;
+  region: string;
+  pais: string;
+  codigo_postal: string;
+}
+
+export interface PedidoItem {
+  sku: string;
+  cantidad: number;
+  precio_unitario: number;
+  descuento: number;
+}
+
+export interface PedidoOrden {
+  id: string;
+  id_canal: string;
+  estado: string;
+  prioridad: string;
+  subtotal: number;
+  impuestos: number;
+  total: number;
+  fecha_creacion: string;
+  cliente: PedidoCliente;
+  direccion_envio: PedidoDireccion;
+  items: PedidoItem[];
+}
