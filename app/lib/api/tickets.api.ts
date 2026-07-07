@@ -1,5 +1,5 @@
 import { API_ROUTES } from "./config";
-import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad } from "../types/ticket.types";
+import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente } from "../types/ticket.types";
 import { authFetch } from "../auth/KeycloakProvider";
 
 const SLA_HOURS: Record<TicketPrioridad, number> = {
@@ -135,5 +135,20 @@ export const ticketsApi = {
       method: "DELETE",
     });
     if (!res.ok) throw new Error("Error al eliminar ticket");
+  },
+
+  getSaludIncidente: async (saludRef: string): Promise<SaludIncidente | null> => {
+    try {
+      const url = API_ROUTES.saludIncidente(saludRef);
+      const res = await fetch(url, {
+        headers: {
+          "x-api-key": process.env.NEXT_PUBLIC_SALUD_API_KEY || "",
+        },
+      });
+      if (!res.ok) return null;
+      return res.json();
+    } catch {
+      return null;
+    }
   },
 };

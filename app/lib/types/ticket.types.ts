@@ -88,3 +88,52 @@ export type TicketActivity = {
 };
 
 export type TicketDetail = TicketDetalle;
+
+export interface SaludPaciente {
+  id: string;
+  rut: string;
+  nombres: string;
+  apellidos: string;
+  email: string;
+  telefono: string;
+  fechaNacimiento: string;
+  sexo: string;
+  direccion: string;
+}
+
+export interface SaludVisita {
+  id: string;
+  fechaProgramada: string;
+  horaProgramada: string;
+  estado: string;
+  duracionEstimadaMin: number;
+  checkInAt: string | null;
+  checkOutAt: string | null;
+  prioridad: string;
+}
+
+export interface SaludProfesional {
+  id: string;
+  profesion: string;
+  numeroRegistro: string;
+  nombres: string;
+  apellidos: string;
+  email: string;
+}
+
+export interface SaludIncidente {
+  id: string;
+  titulo: string;
+  descripcion: string;
+  estado: string;
+  severidad: string;
+  tipo: string;
+  origen: string;
+  createdAt: string;
+  pacienteId: string;
+  paciente: SaludPaciente;
+  visitaId: string | null;
+  visita: SaludVisita | null;
+  profesionalSaludId: string | null;
+  profesionalSalud: SaludProfesional | null;
+}
