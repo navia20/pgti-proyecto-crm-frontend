@@ -139,12 +139,8 @@ export const ticketsApi = {
 
   getSaludIncidente: async (saludRef: string): Promise<SaludIncidente | null> => {
     try {
-      const url = API_ROUTES.saludIncidente(saludRef);
-      const res = await fetch(url, {
-        headers: {
-          "x-api-key": process.env.NEXT_PUBLIC_SALUD_API_KEY || "",
-        },
-      });
+      const url = `/api/salud/${saludRef}`;
+      const res = await fetch(url);
       if (!res.ok) return null;
       return res.json();
     } catch {

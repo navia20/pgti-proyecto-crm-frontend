@@ -45,8 +45,4 @@ export const API_ROUTES = {
   aprobarSolicitud: (id: string) => `${API_BASE_URL}/api/v1/solicitudes/${id}/aprobar`,
   rechazarSolicitud: (id: string) => `${API_BASE_URL}/api/v1/solicitudes/${id}/rechazar`,
   solicitudesPendientesCount: `${API_BASE_URL}/api/v1/solicitudes/pendientes/count`,
-
-  // Salud (incidentes externos - proxy via Next.js rewrite)
-  saludIncidente: (id: string) =>
-    `/api/salud/externo/${id}`,
 };
