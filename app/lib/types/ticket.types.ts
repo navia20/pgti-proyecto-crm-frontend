@@ -203,3 +203,20 @@ export interface PagoCenit {
   created_at: string;
   updated_at: string;
 }
+
+export interface TransaccionUcnpay {
+  transactionId: string;
+  orderId: string;
+  paymentInfo: {
+    status: string;
+    paymentType: string;
+    amount: number;
+    currency: string;
+    operationType: string;
+    rrn: number;
+    authorizationCode: string;
+    cardIssuer: string;
+    last4Digits: string;
+    installments: number;
+  };
+}

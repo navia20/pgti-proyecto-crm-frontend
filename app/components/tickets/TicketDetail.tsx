@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { enlacesApi } from "../../lib/api/enlaces.api";
 import { FRONTEND_URL } from "../../lib/api/config";
-import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal, SaludIncidente, PedidoOrden, ContratoCenit, PlanCenit, PagoCenit } from "../../lib/types/ticket.types";
+import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal, SaludIncidente, PedidoOrden, ContratoCenit, PlanCenit, PagoCenit, TransaccionUcnpay } from "../../lib/types/ticket.types";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 import MessageThread from "./MessageThread";
@@ -17,6 +17,7 @@ import SaludInfoModal from "./SaludInfoModal";
 import PedidoInfoModal from "./PedidoInfoModal";
 import SuscripcionInfoModal from "./SuscripcionInfoModal";
 import PagosHistorialModal from "./PagosHistorialModal";
+import PagoInfoModal from "./PagoInfoModal";
 
 interface TicketDetailProps {
   ticket: TicketDetalle;
@@ -52,7 +53,7 @@ const AGENTES_CONOCIDOS = [
   { id: "p7.agent@ucn.cl", nombre: "Agente CRM" },
 ];
 
-function PanelReferencias({ ticket, onVerSalud, onVerPedido, onVerSuscripcion }: { ticket: TicketDetalle; onVerSalud?: () => void; onVerPedido?: () => void; onVerSuscripcion?: () => void }) {
+function PanelReferencias({ ticket, onVerSalud, onVerPedido, onVerSuscripcion, onVerPago }: { ticket: TicketDetalle; onVerSalud?: () => void; onVerPedido?: () => void; onVerSuscripcion?: () => void; onVerPago?: () => void }) {
   return (
     <div className="ticket-referencias">
       <div className="ticket-referencias__title">
@@ -151,6 +152,25 @@ function PanelReferencias({ ticket, onVerSalud, onVerPedido, onVerSuscripcion }:
               <Link size={10} />
               {ticket.pago_id_ref}
             </span>
+            {onVerPago && (
+              <button
+                onClick={onVerPago}
+                style={{
+                  marginLeft: "0.25rem",
+                  padding: "0.2rem 0.5rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 500,
+                  color: "#3c6e71",
+                  backgroundColor: "#f0f7f7",
+                  border: "1px solid #3c6e71",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Ver información
+              </button>
+            )}
           </div>
         )}
         {!ticket.pedido_id_ref && !ticket.suscripcion_id_ref && !ticket.salud_ref && !ticket.pago_id_ref && (
@@ -202,6 +222,9 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [pagosData, setPagosData] = useState<PagoCenit[]>([]);
   const [cargandoSuscripcion, setCargandoSuscripcion] = useState(false);
   const [showPagosModal, setShowPagosModal] = useState(false);
+  const [showPagoModal, setShowPagoModal] = useState(false);
+  const [pagoUcnpayData, setPagoUcnpayData] = useState<TransaccionUcnpay | null>(null);
+  const [cargandoPago, setCargandoPago] = useState(false);
   const [clienteNombreResuelto, setClienteNombreResuelto] = useState(ticket.cliente_nombre);
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
@@ -418,6 +441,15 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
       setPagosData(pagos);
     }
     setCargandoSuscripcion(false);
+  };
+
+  const handleVerPago = async () => {
+    if (!ticket.pago_id_ref) return;
+    setCargandoPago(true);
+    setShowPagoModal(true);
+    const data = await ticketsApi.getTransaccionUcnpay(ticket.pago_id_ref);
+    setPagoUcnpayData(data);
+    setCargandoPago(false);
   };
 
   return (
@@ -741,7 +773,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <PanelDescripcion ticket={ticket} />
-        <PanelReferencias ticket={ticket} onVerSalud={ticket.salud_ref ? handleVerSalud : undefined} onVerPedido={ticket.pedido_id_ref ? handleVerPedido : undefined} onVerSuscripcion={ticket.suscripcion_id_ref ? handleVerSuscripcion : undefined} />
+        <PanelReferencias ticket={ticket} onVerSalud={ticket.salud_ref ? handleVerSalud : undefined} onVerPedido={ticket.pedido_id_ref ? handleVerPedido : undefined} onVerSuscripcion={ticket.suscripcion_id_ref ? handleVerSuscripcion : undefined} onVerPago={ticket.pago_id_ref ? handleVerPago : undefined} />
         <aside className="ticket-detail__activity">
           <ActivityPanel activity={activityItems} />
         </aside>
@@ -1123,6 +1155,81 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
               </p>
               <button
                 onClick={() => { setShowSuscripcionModal(false); setContratoData(null); setPlanData(null); setPagosData([]); }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      {showPagoModal && (
+        cargandoPago ? (
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => { setShowPagoModal(false); setPagoUcnpayData(null); }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "2rem",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>Cargando información de pago...</div>
+            </div>
+          </div>
+        ) : pagoUcnpayData ? (
+          <PagoInfoModal data={pagoUcnpayData} onClose={() => { setShowPagoModal(false); setPagoUcnpayData(null); }} />
+        ) : (
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => { setShowPagoModal(false); setPagoUcnpayData(null); }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "1.5rem",
+                maxWidth: "400px",
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1rem" }}>
+                No se pudo cargar la información del pago.
+              </p>
+              <button
+                onClick={() => { setShowPagoModal(false); setPagoUcnpayData(null); }}
                 style={{
                   padding: "0.4rem 1rem",
                   borderRadius: "8px",

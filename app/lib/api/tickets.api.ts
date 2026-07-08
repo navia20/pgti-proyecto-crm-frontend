@@ -1,5 +1,5 @@
 import { API_ROUTES } from "./config";
-import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente, PedidoOrden, ContratoCenit, PlanCenit, PagoCenit } from "../types/ticket.types";
+import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente, PedidoOrden, ContratoCenit, PlanCenit, PagoCenit, TransaccionUcnpay } from "../types/ticket.types";
 import { authFetch } from "../auth/KeycloakProvider";
 
 const SLA_HOURS: Record<TicketPrioridad, number> = {
@@ -189,6 +189,16 @@ export const ticketsApi = {
       return json.data ?? [];
     } catch {
       return [];
+    }
+  },
+
+  getTransaccionUcnpay: async (pagoId: string): Promise<TransaccionUcnpay | null> => {
+    try {
+      const res = await fetch(`/api/ucnpay/transaction/${pagoId}`);
+      if (!res.ok) return null;
+      return res.json();
+    } catch {
+      return null;
     }
   },
 };
