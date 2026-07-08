@@ -34,6 +34,7 @@ export default function Topbar() {
   const { esAdmin } = useRole();
   const [modalOpen, setModalOpen] = useState(false);
   const [clientes, setClientes] = useState<ClientePerfil[]>([]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const { keycloak } = useAuth();
   const username = keycloak.tokenParsed?.preferred_username ?? "Usuario";
@@ -115,16 +116,28 @@ export default function Topbar() {
               Crear Ticket
             </button>
           )}
-          <div className="topbar__user">
-            <div className="topbar__user-avatar">{initials}</div>
-            <span>{username}</span>
+          <div className="topbar__user" style={{ position: "relative" }}>
             <button
-              onClick={() => keycloak.logout()}
-              className="topbar__create-btn"
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="topbar__user-trigger"
             >
-              <LogOut size={15} />
-              Salir
+              <div className="topbar__user-avatar">{initials}</div>
+              <span>{username}</span>
             </button>
+            {showUserMenu && (
+              <>
+                <div className="topbar__user-menu-overlay" onClick={() => setShowUserMenu(false)} />
+                <div className="topbar__user-menu">
+                  <button
+                    onClick={() => { setShowUserMenu(false); keycloak.logout(); }}
+                    className="topbar__user-menu-item"
+                  >
+                    <LogOut size={14} />
+                    Cerrar sesión
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </header>

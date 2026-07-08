@@ -84,6 +84,25 @@
   gap: 0.5rem;
   color: var(--topbar-text);
   font-size: 0.875rem;
+  position: relative;
+}
+
+.topbar__user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--topbar-text);
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: background-color 0.15s ease;
+}
+
+.topbar__user-trigger:hover {
+  background-color: var(--topbar-hover);
 }
 
 .topbar__user-avatar {
@@ -97,6 +116,46 @@
   color: #ffffff;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+.topbar__user-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+}
+
+.topbar__user-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  min-width: 160px;
+  padding: 0.25rem;
+  z-index: 100;
+}
+
+.topbar__user-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: #353535;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  font-family: inherit;
+}
+
+.topbar__user-menu-item:hover {
+  background-color: #f3f4f6;
+  color: #dc2626;
 }
 
 .topbar__create-btn {
