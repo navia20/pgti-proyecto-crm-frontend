@@ -129,7 +129,11 @@ export default function Topbar() {
                 <div className="topbar__user-menu-overlay" onClick={() => setShowUserMenu(false)} />
                 <div className="topbar__user-menu">
                   <button
-                    onClick={() => { setShowUserMenu(false); keycloak.logout(); }}
+                    onClick={() => {
+                      sessionStorage.setItem("kc_redirect_uri", window.location.origin + pathname);
+                      setShowUserMenu(false);
+                      keycloak.logout();
+                    }}
                     className="topbar__user-menu-item"
                   >
                     <LogOut size={14} />

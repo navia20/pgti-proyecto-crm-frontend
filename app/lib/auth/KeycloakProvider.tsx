@@ -50,15 +50,21 @@ export function KeycloakProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    const savedRedirect = sessionStorage.getItem("kc_redirect_uri");
+    const redirectUri = savedRedirect || window.location.origin + "/pages/dashboard";
+
     keycloak
       .init({
         onLoad: "login-required",
         pkceMethod: "S256",
         checkLoginIframe: false,
+        redirectUri,
       })
       .then((auth) => {
         setAuthenticated(auth);
         setInitialized(true);
+
+        sessionStorage.removeItem("kc_redirect_uri");
 
         // Refresh token antes de que expire
         setInterval(() => {
