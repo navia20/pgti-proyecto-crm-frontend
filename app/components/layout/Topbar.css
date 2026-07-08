@@ -130,11 +130,24 @@
   right: 0;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  min-width: 160px;
-  padding: 0.25rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+  padding: 0.35rem;
   z-index: 100;
+  transform-origin: top right;
+  animation: slideDown 0.18s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: scaleY(0.8) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1) translateY(0);
+  }
 }
 
 .topbar__user-menu-item {
@@ -154,7 +167,7 @@
 }
 
 .topbar__user-menu-item:hover {
-  background-color: #f3f4f6;
+  background-color: #fef2f2;
   color: #dc2626;
 }
 
