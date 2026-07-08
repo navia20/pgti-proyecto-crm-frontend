@@ -10,11 +10,13 @@ export async function GET(
   const queryString = request.nextUrl.searchParams.toString();
   const targetUrl = `${ucnpayUrl}/${path.join("/")}${queryString ? `?${queryString}` : ""}`;
 
-  const res = await fetch(targetUrl, {
-    headers: {
-      "x-private-key": process.env.UCNPAY_PRIVATE_KEY,
-    },
-  });
+  const privateKey = process.env.UCNPAY_PRIVATE_KEY;
+  const headers: Record<string, string> = {};
+  if (privateKey) {
+    headers["x-private-key"] = privateKey;
+  }
+
+  const res = await fetch(targetUrl, { headers });
 
   if (!res.ok) {
     return NextResponse.json(
