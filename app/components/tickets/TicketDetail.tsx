@@ -4,7 +4,7 @@ import "./TicketDetail.css";
 import React, { useState, useEffect } from "react";
 import {
   Circle, AlertCircle, User,
-  Clock, Tag, Link, ChevronDown, Share2, Check, FileText,
+  Clock, Tag, Link, ChevronDown, Share2, FileText,
 } from "lucide-react";
 import { enlacesApi } from "../../lib/api/enlaces.api";
 import { FRONTEND_URL } from "../../lib/api/config";
@@ -18,6 +18,7 @@ import PedidoInfoModal from "./PedidoInfoModal";
 import SuscripcionInfoModal from "./SuscripcionInfoModal";
 import PagosHistorialModal from "./PagosHistorialModal";
 import PagoInfoModal from "./PagoInfoModal";
+import CompartirEnlaceModal from "./CompartirEnlaceModal";
 
 interface TicketDetailProps {
   ticket: TicketDetalle;
@@ -205,7 +206,6 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [canalActual, setCanalActual] = useState(ticket.canal);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
   const [generandoEnlace, setGenerandoEnlace] = useState(false);
-  const [enlaceCopiado, setEnlaceCopiado] = useState(false);
   const [showConfirmClose, setShowConfirmClose] = useState(false);
   const [showResolveModal, setShowResolveModal] = useState(false);
   const [resolucionTexto, setResolucionTexto] = useState("");
@@ -226,6 +226,8 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [pagoUcnpayData, setPagoUcnpayData] = useState<TransaccionUcnpay | null>(null);
   const [cargandoPago, setCargandoPago] = useState(false);
   const [clienteNombreResuelto, setClienteNombreResuelto] = useState(ticket.cliente_nombre);
+  const [showCompartirModal, setShowCompartirModal] = useState(false);
+  const [enlaceUrl, setEnlaceUrl] = useState("");
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
@@ -323,9 +325,8 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
       setGenerandoEnlace(true);
       const { url } = await enlacesApi.crear(ticket.id);
       const fullUrl = `${FRONTEND_URL}${url}`;
-      await navigator.clipboard.writeText(fullUrl);
-      setEnlaceCopiado(true);
-      setTimeout(() => setEnlaceCopiado(false), 3000);
+      setEnlaceUrl(fullUrl);
+      setShowCompartirModal(true);
     } catch (error) {
       console.error("Error al generar enlace:", error);
     } finally {
@@ -712,20 +713,15 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
         <div className="ticket-detail__meta-group">
           <button
             onClick={handleCopiarEnlace}
-            disabled={generandoEnlace || enlaceCopiado}
+            disabled={generandoEnlace}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-[#d9d9d9] hover:border-[#3c6e71] hover:text-[#3c6e71] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {enlaceCopiado ? (
-              <>
-                <Check size={14} className="text-green-600" />
-                <span className="text-green-600">Enlace copiado</span>
-              </>
+            {generandoEnlace ? (
+              <div className="w-3.5 h-3.5 border-2 border-[#d9d9d9] border-t-[#3c6e71] rounded-full animate-spin" />
             ) : (
-              <>
-                <Share2 size={14} />
-                <span>Compartir con cliente</span>
-              </>
+              <Share2 size={14} />
             )}
+            <span>{generandoEnlace ? "Generando enlace..." : "Compartir con cliente"}</span>
           </button>
         </div>
 
@@ -1244,6 +1240,14 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
             </div>
           </div>
         )
+      )}
+
+      {showCompartirModal && (
+        <CompartirEnlaceModal
+          url={enlaceUrl}
+          ticketId={ticket.id}
+          onClose={() => setShowCompartirModal(false)}
+        />
       )}
     </div>
   );

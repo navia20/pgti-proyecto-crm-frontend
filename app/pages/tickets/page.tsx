@@ -1,18 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Ticket, Inbox } from "lucide-react";
-import TicketDetail from "../../components/tickets/TicketDetail";
+import { useRouter } from "next/navigation";
+import { Ticket, Inbox } from "lucide-react";
 import TicketsTable from "../../components/dashboard/TicketsTable";
 import TicketsGrid from "../../components/dashboard/TicketsGrid";
 import EmptyState from "../../components/ui/EmptyState";
 import FiltersBar, { TicketFilters, ViewMode } from "../../components/ui/FiltersBar";
 import { SkeletonTable } from "../../components/ui/Skeleton";
-import { mockTicketDetalle } from "../../lib/mocks/tickets.mock";
 import { ticketsApi } from "../../lib/api/tickets.api";
-import { interaccionesApi } from "../../lib/api/interacciones.api";
 import { solicitudesApi } from "../../lib/api/solicitudes.api";
-import { Ticket as TicketType, TicketDetalle } from "../../lib/types/ticket.types";
+import { Ticket as TicketType } from "../../lib/types/ticket.types";
 import { useRole } from "../../lib/context/RoleContext";
 import SolicitudesPanel from "../../components/solicitudes/SolicitudesPanel";
 
@@ -30,6 +28,7 @@ const defaultFilters: TicketFilters = {
 type TabVista = "tickets" | "solicitudes";
 
 export default function TicketsPage() {
+  const router = useRouter();
   const { esAdmin, userEmail } = useRole();
   const [tabActiva, setTabActiva] = useState<TabVista>("tickets");
   const [pendientesCount, setPendientesCount] = useState(0);
@@ -37,10 +36,7 @@ export default function TicketsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [filters, setFilters] = useState<TicketFilters>(defaultFilters);
-  const [selectedTicket, setSelectedTicket] = useState<TicketType | null>(null);
-  const [ticketDetalle, setTicketDetalle] = useState<TicketDetalle | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingDetalle, setIsLoadingDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("table");
 
@@ -83,19 +79,7 @@ export default function TicketsPage() {
 
   const handleTicketClick = (ticket: TicketType) => {
     if (ticket.estado === "cerrado" && !esAdmin) return;
-    setSelectedTicket(ticket);
-    sessionStorage.setItem("selectedTicketId", ticket.id);
-    setIsLoadingDetalle(true);
-    void Promise.all([
-      ticketsApi.getById(ticket.id),
-      interaccionesApi.getByTicket(ticket.id),
-    ]).then(([detalle, interacciones]) => {
-      setTicketDetalle({ ...detalle, interacciones });
-    }).catch(() => {
-      setTicketDetalle(mockTicketDetalle);
-    }).finally(() => {
-      setIsLoadingDetalle(false);
-    });
+    router.push("/pages/tickets/" + ticket.id);
   };
 
   const handleAsignarAgente = async (ticketId: string, agenteId: string | null) => {
@@ -119,74 +103,11 @@ export default function TicketsPage() {
   }, [fetchTickets]);
 
   useEffect(() => {
-    const selectedId = sessionStorage.getItem("selectedTicketId");
-    if (selectedId && !selectedTicket) {
-      sessionStorage.removeItem("selectedTicketId");
-      void (async () => {
-        setIsLoadingDetalle(true);
-        try {
-          const [detalle, interacciones] = await Promise.all([
-            ticketsApi.getById(selectedId),
-            interaccionesApi.getByTicket(selectedId),
-          ]);
-          setSelectedTicket({ id: detalle.id, asunto: detalle.asunto, estado: detalle.estado, prioridad: detalle.prioridad, canal: detalle.canal, cliente_id: detalle.cliente_id, cliente_nombre: detalle.cliente_nombre, agente_id: detalle.agente_id, fecha_vencimiento_sla: detalle.fecha_vencimiento_sla, pedido_id_ref: detalle.pedido_id_ref, suscripcion_id_ref: detalle.suscripcion_id_ref, pago_id_ref: detalle.pago_id_ref, salud_ref: detalle.salud_ref, slaPercent: detalle.slaPercent, agente_nombre: detalle.agente_nombre, resolucion: detalle.resolucion });
-          setTicketDetalle({ ...detalle, interacciones });
-        } catch {
-          sessionStorage.removeItem("selectedTicketId");
-        } finally {
-          setIsLoadingDetalle(false);
-        }
-      })();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
-    setSelectedTicket(null);
-    setTicketDetalle(null);
   }, [esAdmin]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
-
-  if (selectedTicket) {
-    return (
-      <div className="flex flex-col h-[calc(100vh-64px)]">
-        <div
-          className="flex items-center gap-4 px-6 py-3 border-b border-[#d9d9d9] bg-white"
-          style={{ minHeight: "52px" }}
-        >
-          <button
-            onClick={() => { setSelectedTicket(null); setTicketDetalle(null); }}
-            className="flex items-center gap-2 text-sm text-[#6b7280] hover:text-[#353535] transition-colors"
-          >
-            <ArrowLeft size={16} />
-            Volver a tickets
-          </button>
-          <span className="text-[#d9d9d9]">|</span>
-          <span className="text-sm font-mono text-[#6b7280]">
-            {selectedTicket.id}
-          </span>
-          <span className="text-sm text-[#353535] font-medium">
-            {selectedTicket.asunto}
-          </span>
-        </div>
-
-        {isLoadingDetalle ? (
-          <div className="flex-1 flex flex-col items-center justify-center gap-4 text-[#6b7280]">
-            <div className="w-8 h-8 border-2 border-[#d9d9d9] border-t-[#284b63] rounded-full animate-spin" />
-            <span className="text-sm">Cargando mensajes...</span>
-          </div>
-        ) : (
-          <TicketDetail
-            ticket={ticketDetalle ?? mockTicketDetalle}
-            esAdmin={esAdmin}
-          />
-        )}
-      </div>
-    );
-  }
 
   return (
     <div className="px-8 py-8 max-w-[1400px] mx-auto">

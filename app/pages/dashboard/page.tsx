@@ -46,8 +46,7 @@ export default function DashboardPage() {
   }, [fetchTickets]);
 
   const handleTicketClick = (ticket: TicketType) => {
-    sessionStorage.setItem("selectedTicketId", ticket.id);
-    router.push("/pages/tickets");
+    router.push("/pages/tickets/" + ticket.id);
   };
 
   const urgentTickets = tickets.filter((t) => t.prioridad === "critica").length;

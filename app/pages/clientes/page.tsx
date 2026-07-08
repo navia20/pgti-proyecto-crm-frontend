@@ -280,8 +280,7 @@ export default function ClientesPage() {
   };
 
   const handleTicketClick = (ticketId: string) => {
-    sessionStorage.setItem("selectedTicketId", ticketId);
-    router.push("/pages/tickets");
+    router.push("/pages/tickets/" + ticketId);
   };
 
   const filtered = clientes.filter(
