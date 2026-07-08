@@ -8,13 +8,15 @@ import {
 } from "lucide-react";
 import { enlacesApi } from "../../lib/api/enlaces.api";
 import { FRONTEND_URL } from "../../lib/api/config";
-import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal, SaludIncidente, PedidoOrden } from "../../lib/types/ticket.types";
+import { TicketDetalle, TicketActivity, Interaccion, TicketEstado, TicketPrioridad, TicketCanal, SaludIncidente, PedidoOrden, ContratoCenit, PlanCenit, PagoCenit } from "../../lib/types/ticket.types";
 import { ticketsApi } from "../../lib/api/tickets.api";
 import { interaccionesApi } from "../../lib/api/interacciones.api";
 import MessageThread from "./MessageThread";
 import ActivityPanel from "./ActivityPanel";
 import SaludInfoModal from "./SaludInfoModal";
 import PedidoInfoModal from "./PedidoInfoModal";
+import SuscripcionInfoModal from "./SuscripcionInfoModal";
+import PagosHistorialModal from "./PagosHistorialModal";
 
 interface TicketDetailProps {
   ticket: TicketDetalle;
@@ -50,7 +52,7 @@ const AGENTES_CONOCIDOS = [
   { id: "p7.agent@ucn.cl", nombre: "Agente CRM" },
 ];
 
-function PanelReferencias({ ticket, onVerSalud, onVerPedido }: { ticket: TicketDetalle; onVerSalud?: () => void; onVerPedido?: () => void }) {
+function PanelReferencias({ ticket, onVerSalud, onVerPedido, onVerSuscripcion }: { ticket: TicketDetalle; onVerSalud?: () => void; onVerPedido?: () => void; onVerSuscripcion?: () => void }) {
   return (
     <div className="ticket-referencias">
       <div className="ticket-referencias__title">
@@ -93,6 +95,25 @@ function PanelReferencias({ ticket, onVerSalud, onVerPedido }: { ticket: TicketD
               <Link size={10} />
               {ticket.suscripcion_id_ref}
             </span>
+            {onVerSuscripcion && (
+              <button
+                onClick={onVerSuscripcion}
+                style={{
+                  marginLeft: "0.25rem",
+                  padding: "0.2rem 0.5rem",
+                  fontSize: "0.7rem",
+                  fontWeight: 500,
+                  color: "#3c6e71",
+                  backgroundColor: "#f0f7f7",
+                  border: "1px solid #3c6e71",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                Ver información
+              </button>
+            )}
           </div>
         )}
         {ticket.salud_ref && (
@@ -175,6 +196,13 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   const [showPedidoModal, setShowPedidoModal] = useState(false);
   const [pedidoData, setPedidoData] = useState<PedidoOrden | null>(null);
   const [cargandoPedido, setCargandoPedido] = useState(false);
+  const [showSuscripcionModal, setShowSuscripcionModal] = useState(false);
+  const [contratoData, setContratoData] = useState<ContratoCenit | null>(null);
+  const [planData, setPlanData] = useState<PlanCenit | null>(null);
+  const [pagosData, setPagosData] = useState<PagoCenit[]>([]);
+  const [cargandoSuscripcion, setCargandoSuscripcion] = useState(false);
+  const [showPagosModal, setShowPagosModal] = useState(false);
+  const [clienteNombreResuelto, setClienteNombreResuelto] = useState(ticket.cliente_nombre);
 
   const handleInteraccionCreada = (nueva: Interaccion) => {
     setInteracciones((prev) => [...prev, nueva]);
@@ -305,6 +333,16 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
   };
 
   useEffect(() => {
+    if (!ticket.cliente_nombre && ticket.pedido_id_ref) {
+      ticketsApi.getPedidoOrden(ticket.pedido_id_ref).then((orden) => {
+        if (orden?.cliente?.nombre) {
+          setClienteNombreResuelto(orden.cliente.nombre);
+        }
+      });
+    }
+  }, [ticket.cliente_nombre, ticket.pedido_id_ref]);
+
+  useEffect(() => {
     const interval = setInterval(async () => {
       try {
         const nuevas = await interaccionesApi.getByTicket(ticket.id);
@@ -363,6 +401,23 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
     const data = await ticketsApi.getPedidoOrden(ticket.pedido_id_ref);
     setPedidoData(data);
     setCargandoPedido(false);
+  };
+
+  const handleVerSuscripcion = async () => {
+    if (!ticket.suscripcion_id_ref) return;
+    setCargandoSuscripcion(true);
+    setShowSuscripcionModal(true);
+    const contrato = await ticketsApi.getContratoCenit(ticket.suscripcion_id_ref);
+    setContratoData(contrato);
+    if (contrato) {
+      const [plan, pagos] = await Promise.all([
+        ticketsApi.getPlanCenit(contrato.id_plans),
+        ticketsApi.getPagosUsuario(contrato.id_users),
+      ]);
+      setPlanData(plan);
+      setPagosData(pagos);
+    }
+    setCargandoSuscripcion(false);
   };
 
   return (
@@ -610,11 +665,11 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
           </div>
           <div className="ticket-detail__person">
             <div className="ticket-detail__avatar">
-              {ticket.cliente_nombre.charAt(0)}
+              {clienteNombreResuelto.charAt(0) || "?"}
             </div>
             <div className="ticket-detail__person-info">
               <span className="ticket-detail__person-name">
-                {ticket.cliente_nombre}
+                {clienteNombreResuelto || "Sin nombre"}
               </span>
             </div>
           </div>
@@ -686,7 +741,7 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
 
       <div style={{ display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <PanelDescripcion ticket={ticket} />
-        <PanelReferencias ticket={ticket} onVerSalud={ticket.salud_ref ? handleVerSalud : undefined} onVerPedido={ticket.pedido_id_ref ? handleVerPedido : undefined} />
+        <PanelReferencias ticket={ticket} onVerSalud={ticket.salud_ref ? handleVerSalud : undefined} onVerPedido={ticket.pedido_id_ref ? handleVerPedido : undefined} onVerSuscripcion={ticket.suscripcion_id_ref ? handleVerSuscripcion : undefined} />
         <aside className="ticket-detail__activity">
           <ActivityPanel activity={activityItems} />
         </aside>
@@ -977,6 +1032,97 @@ export default function TicketDetail({ ticket, esAdmin = false }: TicketDetailPr
               </p>
               <button
                 onClick={() => { setShowPedidoModal(false); setPedidoData(null); }}
+                style={{
+                  padding: "0.4rem 1rem",
+                  borderRadius: "8px",
+                  border: "1px solid #d9d9d9",
+                  background: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        )
+      )}
+
+      {showSuscripcionModal && (
+        cargandoSuscripcion ? (
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => { setShowSuscripcionModal(false); setContratoData(null); setPlanData(null); setPagosData([]); }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "2rem",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={{ fontSize: "0.85rem", color: "#6b7280" }}>Cargando información de suscripción...</div>
+            </div>
+          </div>
+        ) : contratoData ? (
+          <>
+            <SuscripcionInfoModal
+              contrato={contratoData}
+              plan={planData}
+              pagos={pagosData}
+              onVerPagos={() => setShowPagosModal(true)}
+              onClose={() => { setShowSuscripcionModal(false); setContratoData(null); setPlanData(null); setPagosData([]); }}
+            />
+            {showPagosModal && (
+              <PagosHistorialModal
+                pagos={pagosData}
+                idUsers={contratoData.id_users}
+                onBack={() => setShowPagosModal(false)}
+                onClose={() => { setShowPagosModal(false); setShowSuscripcionModal(false); setContratoData(null); setPlanData(null); setPagosData([]); }}
+              />
+            )}
+          </>
+        ) : (
+          <div
+            style={{
+              position: "fixed",
+              top: 0, left: 0, right: 0, bottom: 0,
+              backgroundColor: "rgba(0,0,0,0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 1000,
+            }}
+            onClick={() => { setShowSuscripcionModal(false); setContratoData(null); setPlanData(null); setPagosData([]); }}
+          >
+            <div
+              style={{
+                backgroundColor: "#fff",
+                borderRadius: "12px",
+                padding: "1.5rem",
+                maxWidth: "400px",
+                width: "90%",
+                boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+                textAlign: "center",
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p style={{ fontSize: "0.85rem", color: "#6b7280", marginBottom: "1rem" }}>
+                No se pudo cargar la información de la suscripción.
+              </p>
+              <button
+                onClick={() => { setShowSuscripcionModal(false); setContratoData(null); setPlanData(null); setPagosData([]); }}
                 style={{
                   padding: "0.4rem 1rem",
                   borderRadius: "8px",

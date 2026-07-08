@@ -146,7 +146,7 @@ export interface PedidoCliente {
 
 export interface PedidoDireccion {
   calle: string;
-  numero: number;
+  numero: string;
   ciudad: string;
   region: string;
   pais: string;
@@ -172,4 +172,34 @@ export interface PedidoOrden {
   cliente: PedidoCliente;
   direccion_envio: PedidoDireccion;
   items: PedidoItem[];
+}
+
+export interface ContratoCenit {
+  id_contracts: string;
+  id_users: string;
+  id_plans: string;
+  status: "DRAFT" | "ACTIVE" | "SUSPENDED" | "TERMINATED" | "CANCELLED";
+  start_date: string;
+  end_date: string;
+  updated_at: string;
+}
+
+export interface PlanCenit {
+  id_plans: string;
+  name: string;
+  billing_cycle: string;
+  amount: string;
+  isActive: boolean;
+}
+
+export interface PagoCenit {
+  id_payments: string;
+  id_users: string;
+  id_billing_cycles: string | null;
+  amount: string;
+  concept: string;
+  status: "PENDIENTE" | "APROBADO" | "RECHAZADO";
+  external_tx_id: string | null;
+  created_at: string;
+  updated_at: string;
 }

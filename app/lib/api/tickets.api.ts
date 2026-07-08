@@ -1,5 +1,5 @@
 import { API_ROUTES } from "./config";
-import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente, PedidoOrden } from "../types/ticket.types";
+import { Ticket, TicketDetalle, CrearTicketForm, TicketPrioridad, SaludIncidente, PedidoOrden, ContratoCenit, PlanCenit, PagoCenit } from "../types/ticket.types";
 import { authFetch } from "../auth/KeycloakProvider";
 
 const SLA_HOURS: Record<TicketPrioridad, number> = {
@@ -156,6 +156,39 @@ export const ticketsApi = {
       return res.json();
     } catch {
       return null;
+    }
+  },
+
+  getContratoCenit: async (idContracts: string): Promise<ContratoCenit | null> => {
+    try {
+      const res = await fetch(`/api/cenit/contratos/listar?id_contracts=${idContracts}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data?.[0] ?? null;
+    } catch {
+      return null;
+    }
+  },
+
+  getPlanCenit: async (idPlans: string): Promise<PlanCenit | null> => {
+    try {
+      const res = await fetch(`/api/cenit/planes/listar?id_plans=${idPlans}`);
+      if (!res.ok) return null;
+      const json = await res.json();
+      return json.data?.[0] ?? null;
+    } catch {
+      return null;
+    }
+  },
+
+  getPagosUsuario: async (idUsers: string): Promise<PagoCenit[]> => {
+    try {
+      const res = await fetch(`/api/cenit/pagos/usuario/${idUsers}`);
+      if (!res.ok) return [];
+      const json = await res.json();
+      return json.data ?? [];
+    } catch {
+      return [];
     }
   },
 };
