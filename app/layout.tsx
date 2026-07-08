@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "CRM | Sistema ERP",
   description: "Módulo CRM de Clientes y Soporte - Proyecto ERP",
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({
