@@ -16,6 +16,37 @@ import SolicitudesPanel from "../../components/solicitudes/SolicitudesPanel";
 
 const PAGE_SIZE = 15;
 
+const STORAGE_KEY_FILTERS = "tickets_filters";
+const STORAGE_KEY_PAGE = "tickets_page";
+const STORAGE_KEY_VIEW = "tickets_view_mode";
+const STORAGE_KEY_TAB = "tickets_tab";
+
+function loadFilters(): TicketFilters {
+  if (typeof window === "undefined") return defaultFilters;
+  try {
+    const saved = sessionStorage.getItem(STORAGE_KEY_FILTERS);
+    return saved ? JSON.parse(saved) : defaultFilters;
+  } catch {
+    return defaultFilters;
+  }
+}
+
+function loadPage(): number {
+  if (typeof window === "undefined") return 1;
+  const saved = sessionStorage.getItem(STORAGE_KEY_PAGE);
+  return saved ? Number(saved) || 1 : 1;
+}
+
+function loadViewMode(): ViewMode {
+  if (typeof window === "undefined") return "table";
+  return (sessionStorage.getItem(STORAGE_KEY_VIEW) as ViewMode) || "table";
+}
+
+function loadTab(): TabVista {
+  if (typeof window === "undefined") return "tickets";
+  return (sessionStorage.getItem(STORAGE_KEY_TAB) as TabVista) || "tickets";
+}
+
 const defaultFilters: TicketFilters = {
   search: "",
   referencia: "",
@@ -30,15 +61,15 @@ type TabVista = "tickets" | "solicitudes";
 export default function TicketsPage() {
   const router = useRouter();
   const { esAdmin, userEmail } = useRole();
-  const [tabActiva, setTabActiva] = useState<TabVista>("tickets");
+  const [tabActiva, setTabActiva] = useState<TabVista>(loadTab);
   const [pendientesCount, setPendientesCount] = useState(0);
   const [tickets, setTickets] = useState<TicketType[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [filters, setFilters] = useState<TicketFilters>(defaultFilters);
+  const [page, setPage] = useState(loadPage);
+  const [filters, setFilters] = useState<TicketFilters>(loadFilters);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [viewMode, setViewMode] = useState<ViewMode>(loadViewMode);
 
   useEffect(() => {
     if (esAdmin) {
@@ -106,6 +137,22 @@ export default function TicketsPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setPage(1);
   }, [esAdmin]);
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(filters));
+  }, [filters]);
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY_PAGE, String(page));
+  }, [page]);
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY_VIEW, viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    sessionStorage.setItem(STORAGE_KEY_TAB, tabActiva);
+  }, [tabActiva]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
