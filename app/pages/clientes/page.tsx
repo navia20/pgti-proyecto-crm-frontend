@@ -215,9 +215,9 @@ export default function ClientesPage() {
         email: form.email,
         telefono: form.telefono || undefined,
         empresa: form.empresa || undefined,
-        ubicacion: form.ciudad
-          ? `${form.ciudad}${form.pais ? `, ${form.pais}` : ""}`
-          : undefined,
+        direccion: form.direccion || undefined,
+        ciudad: form.ciudad || undefined,
+        pais: form.pais || undefined,
       });
       closeModal();
       await fetchClientes();
