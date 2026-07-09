@@ -22,6 +22,9 @@ function mapCliente(data: Record<string, unknown>): ClientePerfil {
     fecha_nacimiento: (data.fecha_nacimiento as string) ?? "",
     creado_en: data.creado_en as string,
     empresa: data.empresa as string | undefined,
+    direccion: data.direccion as string | undefined,
+    ciudad: data.ciudad as string | undefined,
+    pais: data.pais as string | undefined,
     ubicacion: data.ciudad
       ? `${data.ciudad}${data.pais ? `, ${data.pais}` : ""}`
       : undefined,

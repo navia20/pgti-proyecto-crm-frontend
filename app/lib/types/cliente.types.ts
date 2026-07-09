@@ -46,6 +46,9 @@ export interface ClientePerfil {
   creado_en: string;
   empresa?: string;
   company?: string;             // alias para compatibilidad UI
+  direccion?: string;
+  ciudad?: string;
+  pais?: string;
   ubicacion?: string;
   location?: string;            // alias para compatibilidad UI
   estado: ClienteEstado;

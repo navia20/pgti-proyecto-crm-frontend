@@ -189,9 +189,9 @@ export default function ClientesPage() {
       email: selectedCliente.email,
       telefono: selectedCliente.telefono ?? "",
       empresa: selectedCliente.empresa ?? "",
-      direccion: "",
-      ciudad: "",
-      pais: "",
+      direccion: selectedCliente.direccion ?? "",
+      ciudad: selectedCliente.ciudad ?? "",
+      pais: selectedCliente.pais ?? "",
     });
     setFormError(null);
     setModalType("edit");
@@ -252,6 +252,9 @@ export default function ClientesPage() {
         email: form.email,
         telefono: form.telefono || undefined,
         empresa: form.empresa || undefined,
+        direccion: form.direccion || undefined,
+        ciudad: form.ciudad || undefined,
+        pais: form.pais || undefined,
       });
       closeModal();
       await fetchClientes();
@@ -261,6 +264,9 @@ export default function ClientesPage() {
         email: form.email,
         telefono: form.telefono,
         empresa: form.empresa,
+        direccion: form.direccion,
+        ciudad: form.ciudad,
+        pais: form.pais,
       });
     } catch {
       setFormError("Error al actualizar el cliente.");

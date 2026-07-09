@@ -1,6 +1,6 @@
 import "./ClienteHeader.css";
 import React from "react";
-import { Building2, MapPin, Calendar, Mail, Phone } from "lucide-react";
+import { Building2, MapPin, Calendar, Mail, Phone, Home } from "lucide-react";
 import { ClientePerfil } from "../../lib/types/cliente.types";
 
 interface ClienteHeaderProps {
@@ -17,6 +17,15 @@ export default function ClienteHeader({ cliente }: ClienteHeaderProps) {
     });
   const telefono = cliente.telefono ?? cliente.phone ?? "—";
   const estadoCliente = cliente.estado ?? cliente.status ?? "inactive";
+
+  const direccionParts = [
+    cliente.direccion,
+    cliente.ciudad,
+    cliente.pais,
+  ].filter(Boolean);
+  const direccionCompleta = direccionParts.length > 0
+    ? direccionParts.join(", ")
+    : null;
 
   return (
     <div className="cliente-header">
@@ -67,6 +76,13 @@ export default function ClienteHeader({ cliente }: ClienteHeaderProps) {
           <span className="cliente-header__contact-label">Teléfono</span>
           {telefono}
         </div>
+        {direccionCompleta && (
+          <div className="cliente-header__contact-item">
+            <Home size={13} className="cliente-header__contact-label" />
+            <span className="cliente-header__contact-label">Dirección</span>
+            {direccionCompleta}
+          </div>
+        )}
       </div>
     </div>
   );
