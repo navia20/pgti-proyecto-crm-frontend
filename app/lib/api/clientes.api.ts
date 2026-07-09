@@ -35,10 +35,11 @@ export const clientesApi = {
   },
 
   crear: async (cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
+    const { ubicacion, ...payload } = cliente;
     const res = await authFetch(API_ROUTES.clientes, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cliente),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error("Error al crear cliente");
     const data = await res.json();
@@ -46,10 +47,11 @@ export const clientesApi = {
   },
 
   actualizar: async (id: number, cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
+    const { ubicacion, ...payload } = cliente;
     const res = await authFetch(API_ROUTES.clienteById(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(cliente),
+      body: JSON.stringify(payload),
     });
     if (!res.ok) throw new Error("Error al actualizar cliente");
     const data = await res.json();
