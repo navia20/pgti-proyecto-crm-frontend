@@ -14,6 +14,7 @@ import {
   RefreshCw,
   Pencil,
   Trash2,
+  CloudUpload,
 } from "lucide-react";
 import ClienteHeader from "../../components/clientes/ClienteHeader";
 import TicketsList from "../../components/clientes/TicketsList";
@@ -96,6 +97,10 @@ export default function ClientesPage() {
   const [form, setForm] = useState<ClienteForm>(initialForm);
   const [guardando, setGuardando] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [showProvisionModal, setShowProvisionModal] = useState(false);
+  const [provisionando, setProvisionando] = useState(false);
+  const [provisionResult, setProvisionResult] = useState<{ ok: boolean; message: string } | null>(null);
 
   const fetchClientes = useCallback(async () => {
     try {
@@ -279,6 +284,38 @@ export default function ClientesPage() {
     }
   };
 
+  const handleProvision = async () => {
+    if (!selectedCliente) return;
+    setProvisionando(true);
+    setProvisionResult(null);
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+      const res = await fetch(`${baseUrl}/api/v1/provision-user`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerId: "cust_" + selectedCliente.id,
+          email: selectedCliente.email,
+          firstName: selectedCliente.nombre_completo.split(" ")[0],
+          lastName: selectedCliente.nombre_completo.split(" ").slice(1).join(" ") || "",
+          phone: selectedCliente.telefono,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setProvisionResult({ ok: true, message: `Usuario provisionado: ${data.userId}` });
+      } else {
+        setProvisionResult({ ok: false, message: data.error || "Error al provisionar" });
+      }
+    } catch {
+      setProvisionResult({ ok: false, message: "Error de red al provisionar" });
+    } finally {
+      setProvisionando(false);
+    }
+  };
+
   const handleTicketClick = (ticketId: string) => {
     router.push("/pages/tickets/" + ticketId);
   };
@@ -310,6 +347,13 @@ export default function ClientesPage() {
             >
               <Pencil size={12} />
               Editar
+            </button>
+            <button
+              onClick={() => { setProvisionResult(null); setShowProvisionModal(true); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#1a5276] border border-[#2980b9] rounded-lg hover:bg-[#2980b9] hover:text-white transition-colors"
+            >
+              <CloudUpload size={12} />
+              Provisionar
             </button>
             <button
               onClick={openDeleteModal}
@@ -706,6 +750,67 @@ export default function ClientesPage() {
                 >
                   {guardando ? "Eliminando..." : "Eliminar"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal Provisionar */}
+        {showProvisionModal && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) { setShowProvisionModal(false); setProvisionResult(null); } }}
+          >
+            <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[#d9d9d9]">
+                <div className="text-base font-semibold text-[#353535]">
+                  Provisionar Usuario
+                </div>
+                <button
+                  onClick={() => { setShowProvisionModal(false); setProvisionResult(null); }}
+                  className="text-[#6b7280] hover:text-[#353535] transition-colors p-1 rounded-lg hover:bg-gray-100"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="px-6 py-5">
+                {provisionResult ? (
+                  <div className={`text-sm rounded-lg px-3 py-2 ${provisionResult.ok ? "text-green-700 bg-green-50 border border-green-200" : "text-red-600 bg-red-50 border border-red-200"}`}>
+                    {provisionResult.message}
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-sm text-[#6b7280] mb-3">
+                      Se provisionará un usuario en el sistema externo con los datos de:
+                    </p>
+                    <div className="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+                      <p><span className="font-medium text-[#353535]">Nombre:</span> {selectedCliente?.nombre_completo}</p>
+                      <p><span className="font-medium text-[#353535]">Email:</span> {selectedCliente?.email}</p>
+                      <p><span className="font-medium text-[#353535]">Teléfono:</span> {selectedCliente?.telefono}</p>
+                    </div>
+                    <p className="text-xs text-[#6b7280] mt-3">¿Deseas continuar?</p>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#d9d9d9]">
+                <button
+                  onClick={() => { setShowProvisionModal(false); setProvisionResult(null); }}
+                  className="text-sm text-[#6b7280] border border-[#d9d9d9] px-4 py-2 rounded-lg hover:border-[#353535] hover:text-[#353535] transition-colors"
+                >
+                  {provisionResult ? "Cerrar" : "Cancelar"}
+                </button>
+                {!provisionResult && (
+                  <button
+                    onClick={handleProvision}
+                    disabled={provisionando}
+                    className="flex items-center gap-2 bg-[#2980b9] text-white px-5 py-2 rounded-lg text-sm font-medium hover:bg-[#1a5276] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <CloudUpload size={14} />
+                    {provisionando ? "Provisionando..." : "Provisionar"}
+                  </button>
+                )}
               </div>
             </div>
           </div>
