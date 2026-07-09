@@ -2,6 +2,16 @@ import { API_ROUTES } from "./config";
 import { ClientePerfil } from "../types/cliente.types";
 import { authFetch } from "../auth/KeycloakProvider";
 
+export interface CrearClienteInput {
+  nombre_completo: string;
+  email: string;
+  telefono?: string;
+  empresa?: string;
+  direccion?: string;
+  ciudad?: string;
+  pais?: string;
+}
+
 function mapCliente(data: Record<string, unknown>): ClientePerfil {
   return {
     id: data.id as number,
@@ -34,24 +44,22 @@ export const clientesApi = {
     return mapCliente(data);
   },
 
-  crear: async (cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
-    const { ubicacion, ...payload } = cliente;
+  crear: async (cliente: CrearClienteInput): Promise<ClientePerfil> => {
     const res = await authFetch(API_ROUTES.clientes, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cliente),
     });
     if (!res.ok) throw new Error("Error al crear cliente");
     const data = await res.json();
     return mapCliente(data);
   },
 
-  actualizar: async (id: number, cliente: Partial<ClientePerfil>): Promise<ClientePerfil> => {
-    const { ubicacion, ...payload } = cliente;
+  actualizar: async (id: number, cliente: CrearClienteInput): Promise<ClientePerfil> => {
     const res = await authFetch(API_ROUTES.clienteById(id), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(cliente),
     });
     if (!res.ok) throw new Error("Error al actualizar cliente");
     const data = await res.json();
